@@ -20,7 +20,8 @@ class Inboxscreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Obx(() {
-        if (!loginController.isLoggedIn.value) {
+        
+        if (!loginController.isLoggedIn) {
           return Center(child: CircularProgressIndicator());
         } else {
           return Center(

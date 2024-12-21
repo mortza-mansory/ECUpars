@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:treenode/views/auth/loginScreen.dart';
 
 import '../../controllers/utills/LangController.dart';
 import '../../controllers/utills/ThemeController.dart';
 
-class heroScreen extends StatelessWidget {
-  const heroScreen({super.key});
+class StartScreen extends StatelessWidget {
+  const StartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+
     final LangController langController = Get.find<LangController>();
     final ThemeController themeController = Get.find<ThemeController>();
+
     bool logo = true;
+
+    double a = MediaQuery.of(context).size.width;
+    double n = 0.5 * a;
+
+    double r = 0.02 * n;
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
@@ -38,11 +47,10 @@ class heroScreen extends StatelessWidget {
                   items: [
                     DropdownMenuItem(value: 'en', child: Text('English')),
                     DropdownMenuItem(value: 'es', child: Text('Español')),
-                    DropdownMenuItem(value: 'fr', child: Text('فارسی')),
+                    DropdownMenuItem(value: 'fa', child: Text('فارسی')),
                   ],
                   underline: SizedBox.shrink(),
                 ),
-
               ],
             ),
             SizedBox(
@@ -53,8 +61,9 @@ class heroScreen extends StatelessWidget {
               children: [
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: const Size(320, 60),
+                    fixedSize: Size(n, 60),
                     elevation: 7,
+                    shadowColor: Colors.black,
                     backgroundColor: Colors.yellow.shade600,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(40),
@@ -63,19 +72,24 @@ class heroScreen extends StatelessWidget {
                   ),
                   onPressed: () {},
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.fromLTRB(20,8,20,8),
                     child: Row(
                       children: [
                         Icon(
-                          Icons.credit_card_outlined,
+                          Icons.credit_card,
                           color: Colors.black,
                         ),
-                        SizedBox(
-                          width: 90,
-                        ),
-                        Text(
-                          "Sign up".tr,
-                          style: TextStyle(color: Colors.black, fontFamily: 'Sarbaz', fontSize: 20),
+                        SizedBox(width: r),
+                        Expanded(
+                          child: Text(
+                            "Sign up".tr,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontFamily: 'Sarbaz',
+                              fontSize: 20,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -86,7 +100,7 @@ class heroScreen extends StatelessWidget {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: const Size(320, 60),
+                    fixedSize: Size(n, 60),
                     elevation: 7,
                     shadowColor: Colors.black,
                     backgroundColor: Colors.yellow.shade600,
@@ -96,22 +110,27 @@ class heroScreen extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                   onPressed: () {
-                    Get.toNamed('/l');
+                    Get.to(() => LoginScreen());
                   },
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.fromLTRB(20,8,20,8),
                     child: Row(
                       children: [
                         Icon(
                           Icons.login_rounded,
                           color: Colors.black,
                         ),
-                        SizedBox(
-                          width: 90,
-                        ),
-                        Text(
-                          "Login".tr,
-                          style: TextStyle(color: Colors.black, fontFamily: 'Sarbaz', fontSize: 20),
+                        SizedBox(width: r),
+                        Expanded(
+                          child: Text(
+                            "Login".tr,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontFamily: 'Sarbaz',
+                              fontSize: 20,
+                            ),
+                          ),
                         ),
                       ],
                     ),

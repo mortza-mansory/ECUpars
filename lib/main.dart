@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:treenode/views/loading/LoadingScreen.dart';
 import 'package:treenode/controllers/utills/components/appTheme.dart';
 import 'package:treenode/controllers/utills/components/translator.dart';
 import 'package:treenode/views/auth/heroScreen.dart';
@@ -30,11 +31,12 @@ class ECUPARS extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         initialBinding: MyBindings(),
         getPages: [
+          GetPage(name: '/loading', page: () => LoadingScreen()),
           GetPage(name: '/l', page: () => LoginScreen()),
-          GetPage(name: '/start', page: () => heroScreen()),
+          GetPage(name: '/start', page: () => StartScreen()),
           GetPage(name: '/home', page: () => Homescreen())
         ],
-        initialRoute: '/start',
+        initialRoute: '/loading',
         title: 'TreeNode',
         theme: themeController.isDarkTheme.value
             ? AppTheme.darkTheme
