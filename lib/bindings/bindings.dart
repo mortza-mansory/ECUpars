@@ -23,7 +23,7 @@ class MyBindings extends Bindings {
     Get.put(ApiController());
     Get.put(LoadingController());
     Get.put(CategoryController());
-    Get.lazyPut(() => IssuesController());
+    Get.put(IssueController());
     Get.put(ApiAds());
   }
 }

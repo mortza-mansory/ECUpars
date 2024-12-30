@@ -39,6 +39,7 @@ class ConnectionController extends GetxController {
             'Please check your connection and try again.'.tr,
             snackPosition: SnackPosition.TOP,
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 20),
             colorText: Colors.white,
           );
         }

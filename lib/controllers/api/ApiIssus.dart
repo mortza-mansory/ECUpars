@@ -1,41 +1,163 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:treenode/services/api/HttpService.dart';
-import 'package:treenode/services/com.dart';
+import 'package:treenode/views/treeView/IssusScreen.dart';
 
-class IssuesController extends GetxController {
-  var issues = <dynamic>[].obs;
+class IssueController extends GetxController {
+  var issue = <String, dynamic>{}.obs;
+  var question = <String, dynamic>{}.obs;
+  var isLoading = false.obs;
+
+  var stepDetails = <String, dynamic>{}.obs;
+  var isStepLoading = false.obs;
 
   final HttpService httpService = HttpService();
-  final Com com = Com(httpService: HttpService());
 
-  final Map<int, List<dynamic>> issuesCache = {};
+  final List<int> navigationStack = [];
 
-  Future<bool> loadIssues(int categoryId, {bool forceRefresh = false}) async {
-    if (!forceRefresh && issuesCache.containsKey(categoryId)) {
-      issues.assignAll(issuesCache[categoryId] ?? <dynamic>[]);
-      return true;
-    }
+  String _decodeUtf8(String text) {
+    return utf8.decode(text.runes.toList(), allowMalformed: true);
+  }
 
+  final Map<int, Map<String, dynamic>> issueCache = {};
+
+  Future<void> loadIssueDetails(int issueId) async {
+    isLoading.value = true;
     try {
-      final Map<dynamic, dynamic> data = await httpService.fetchCategoryDetails(categoryId, true, true);
-      final List<dynamic> fetchedIssues = List<dynamic>.from(data['issues'] ?? []);
+      if (issueCache.containsKey(issueId)) {
+        issue.assignAll(issueCache[issueId]!);
+        question.assignAll(Map<String, dynamic>.from(issueCache[issueId]!['question'] ?? {}));
+        print("Using cached Issue Details: $issue");
+        return;
+      }
 
-      issues.assignAll(fetchedIssues);
+      final Map<String, dynamic> data = await httpService.fetchIssueDetails(issueId);
+      print("Fetched Issue Details: $data");
 
-      issuesCache[categoryId] = fetchedIssues;
+      final issueDetails = data['issue'] ?? {};
+      final questionDetails = data['question'] ?? {};
+      final optionsList = data['options'] ?? [];
 
-      return true;
+      if (issueDetails['description'] != null) {
+        issueDetails['description'] = _decodeUtf8(issueDetails['description']);
+      }
+      if (issueDetails['title'] != null) {
+        issueDetails['title'] = _decodeUtf8(issueDetails['title']);
+      }
+      if (questionDetails['text'] != null) {
+        questionDetails['text'] = _decodeUtf8(questionDetails['text']);
+      }
+
+      if (optionsList is List) {
+        questionDetails['options'] = optionsList.map((option) {
+          return {
+            ...option,
+            'text': _decodeUtf8(option['text'] ?? ''),
+          };
+        }).toList();
+      }
+
+      issue.assignAll(issueDetails);
+      question.assignAll(Map<String, dynamic>.from(questionDetails));
+      issueCache[issueId] = issueDetails;
+
+      print("Assigned Issue Details: ${issue['description']}");
+      print("Assigned Question Details: $question");
+
     } catch (e) {
-      print("E. load issues: $e");
-      return false;
+      print("Error loading issue details: $e");
+      Get.snackbar(
+        "Error".tr,
+        "$e",
+        snackPosition: SnackPosition.BOTTOM,
+        isDismissible: true,
+        duration: Duration(seconds: 20),
+        backgroundColor: Colors.redAccent.withOpacity(0.4),
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  void clearIssuesCache(int categoryId) {
-    issuesCache.remove(categoryId);
+  Future<void> fetchStepDetails(int stepId) async {
+    isStepLoading.value = true;
+    try {
+      final Map<String, dynamic> data = await httpService.fetchStepDetail(stepId);
+      print("Fetched Step Details: $data");
+
+      final stepData = data['step'] ?? {};
+      final questionData = data['question'] ?? {};
+      final question = stepData['question'] ?? {};
+
+      if (stepData['issue'] != null) {
+        stepData['issue'] = _decodeUtf8(stepData['issue']);
+      }
+      if (stepData['solution'] != null) {
+        stepData['solution'] = _decodeUtf8(stepData['solution']);
+      }
+      if (stepData['letter'] != null) {
+        stepData['letter'] = _decodeUtf8(stepData['letter']);
+      }
+
+      if (question is Map<String, dynamic>) {
+        if (question['text'] != null) {
+          question['text'] = _decodeUtf8(question['text']);
+        }
+      }
+
+      final optionsList = data['options'] ?? [];
+      if (optionsList is List) {
+        question['options'] = optionsList.map((option) {
+          return {
+            ...option,
+            'text': _decodeUtf8(option['text'] ?? ''),
+          };
+        }).toList();
+      }
+
+      stepDetails.assignAll(stepData);
+      this.question.assignAll(Map<String, dynamic>.from(question));
+
+      print("Assigned Step Details: ${stepDetails['issue']}");
+      print("Assigned Question Details: $question");
+
+    } catch (e) {
+      print("Error loading step details: $e");
+      Get.snackbar(
+        "Error".tr,
+        "$e",
+        snackPosition: SnackPosition.BOTTOM,
+        isDismissible: true,
+        duration: Duration(seconds: 20),
+        backgroundColor: Colors.redAccent.withOpacity(0.4),
+      );
+    } finally {
+      isStepLoading.value = false;
+    }
   }
 
-  void clearAllCache() {
-    issuesCache.clear();
+  void navigateBack() {
+    if (navigationStack.isNotEmpty) {
+      navigationStack.removeLast();
+      if (navigationStack.isNotEmpty) {
+        final previousIssueId = navigationStack.last;
+        loadIssueDetails(previousIssueId).then((_) {
+          Get.off(() => Issusscreen(issueId: previousIssueId));
+        });
+      } else {
+        Get.back();
+      }
+    }
+  }
+
+  void navigateToIssue(int issueId) {
+    if (navigationStack.isEmpty || navigationStack.last != issueId) {
+      navigationStack.add(issueId);
+    }
+
+    loadIssueDetails(issueId).then((_) {
+      Get.to(() => Issusscreen(issueId: issueId));
+    });
   }
 }

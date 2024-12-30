@@ -228,6 +228,64 @@ class HttpService {
     }
   }
 
+  //----------------------------------for issus---------------------------------------------------------------------------------------------------------------------------------------
+  Future<Map<String, dynamic>> fetchIssueDetails(int issueId) async {
+    String? accessToken = _storage.read('access_token');
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception("No access token is here...");
+    }
+
+    String url = '${Endpoint.httpAddress}/api/v1/issues/$issueId/';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      _logResponse("GET", url, response);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception("E: fetch issue : ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("E.fetching issue details ...: $e");
+    }
+  }
+  //----------------------------------for Steps--------------------------------------------------------------------------------------------------------------------------------------
+  Future<Map<String, dynamic>> fetchStepDetail(int stepId) async {
+    String? accessToken = _storage.read('access_token');
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception("No access token is here...");
+    }
+
+    String url = '${Endpoint.httpAddress}/api/v1/steps/$stepId/';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      _logResponse("GET", url, response);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception("E: fetch step : ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("E.fetching step details ...: $e");
+    }
+  }
 
   //----------------------------------for ads---------------------------------------------------------------------------------------------------------------------------------------
   Future<List<Map<String, dynamic>>> fetchAds() async {
@@ -300,14 +358,15 @@ class HttpService {
         }
 
         return pngAssets;
+      } else if (response.statusCode == 401) {
+        print("Unauthorized: Please check the access token.");
+        throw Exception("Unauthorized: Access token is invalid or expired.");
       } else {
         print("Failed to fetch PNG assets, status code: ${response.statusCode}");
-        if (response.statusCode == 401) {
-          print("Unauthorized: Please check the access token.");
-        }
       }
     } catch (e) {
       print("Error while fetching PNG assets: $e");
+      rethrow;
     }
     return [];
   }

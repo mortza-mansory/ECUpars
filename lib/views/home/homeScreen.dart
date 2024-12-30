@@ -26,7 +26,6 @@ class Homescreen extends StatelessWidget {
   final LoginController loginController = Get.find<LoginController>();
   final ConnectionController connectionController = Get.find<ConnectionController>();
 
-  //new it:
   Widget _buildIconAnimations(BuildContext context) {
     double AdaptivePadding(double width) {
       if (width <= 320) {
@@ -41,6 +40,7 @@ class Homescreen extends StatelessWidget {
     }
 
     double c = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     double hPadding = AdaptivePadding(c);
     double d = 0.260 * c;
     double b = d / 8.5;
@@ -58,7 +58,6 @@ class Homescreen extends StatelessWidget {
     final themeController = Get.find<ThemeController>();
 
     return Obx(() {
-      // Check if data is loading
       if (apiController.isLoading.value) {
         return Center(
           child: Container(
@@ -101,61 +100,24 @@ class Homescreen extends StatelessWidget {
         );
       }
 
-      // If error occurs while fetching data
       if (apiController.errorMessage.isNotEmpty) {
-        // Check for specific error message (401 Unauthorized)
-        if (apiController.errorMessage.contains('Unauthorized')) {
-          return Center(
-            child: Container(
-              width: double.infinity,
-              height: MediaQuery.of(context).size.height * 0.2,
-              child: Card(
-                elevation: 4.0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                color: Colors.red.shade50,
-                margin: EdgeInsets.symmetric(horizontal: 20.0),
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 40,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'Error: Unauthorized access. Please check your access token.',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Retry action or prompt to login again
-                          apiController.retryFetch(); // You might want to trigger a login prompt here
-                        },
-                        child: Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                apiController.errorMessage.value,
+                style: TextStyle(color: Colors.white),
               ),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
             ),
           );
-        }
+        });
 
         return Center(
           child: Container(
             width: double.infinity,
-            height: MediaQuery.of(context).size.height * 0.2,
+            height: height * 0.15,
             child: Card(
               elevation: 4.0,
               shape: RoundedRectangleBorder(
@@ -166,29 +128,41 @@ class Homescreen extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: Colors.red,
-                      size: 40,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 24.0,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Unauthorized: Please log in again.'.tr,
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Error: ${apiController.errorMessage}',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    Divider(thickness: 1, color: Colors.red.shade200),
+                    SizedBox(height: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          apiController.errorMessage.value,
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        apiController.retryFetch();  // Retry button action
-                      },
-                      child: Text('Retry'),
                     ),
                   ],
                 ),
@@ -198,7 +172,6 @@ class Homescreen extends StatelessWidget {
         );
       }
 
-      // When PNG assets are available
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: a),
         child: Wrap(
@@ -246,7 +219,7 @@ class Homescreen extends StatelessWidget {
   }) {
     return GestureDetector(
       onTap: () {
-        Get.to(() => GenericCategoryScreen(
+        Get.to(() => CategoryScreen(
               categoryId: id,
               isRoot: true,
             ));

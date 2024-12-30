@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:treenode/controllers/api/ApiCategory.dart';
 import 'package:treenode/controllers/utills/LangController.dart';
-import 'package:treenode/controllers/utills/LangController.dart';
 import 'package:treenode/controllers/utills/ThemeController.dart';
 import 'package:treenode/views/home/homeScreen.dart';
-import 'package:treenode/views/treeView/components/container.dart';
+import 'package:treenode/views/treeView/components/CategoryContainer.dart';
+import 'package:treenode/views/treeView/components/IssusContainer.dart';
 
-class GenericCategoryScreen extends StatelessWidget {
+class CategoryScreen extends StatelessWidget {
   final int categoryId;
   final bool isRoot;
 
-  GenericCategoryScreen({required this.categoryId, this.isRoot = false});
+  CategoryScreen({required this.categoryId, this.isRoot = false});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class GenericCategoryScreen extends StatelessWidget {
 
     return WillPopScope(
       onWillPop: () async {
-        showConfirmationDialog(context);
+        categoryController.navigateBack();
         return false;
       },
       child: Scaffold(
@@ -35,7 +35,8 @@ class GenericCategoryScreen extends StatelessWidget {
               ? const Color.fromRGBO(44, 45, 49, 1)
               : const Color.fromRGBO(255, 250, 244, 1),
           iconTheme: IconThemeData(
-            color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+            color:
+            themeController.isDarkTheme.value ? Colors.white : Colors.black,
           ),
           elevation: 0,
           leading: IconButton(
@@ -44,14 +45,28 @@ class GenericCategoryScreen extends StatelessWidget {
           ),
           title: Obx(
                 () => Text(
-              categoryController.category['name'] ?? (isRoot ? 'Main Categories' : 'Sub Category'),
+              categoryController.category['name'] ??
+                  (isRoot ? 'Main Categories' : 'Sub Category'),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+                color: themeController.isDarkTheme.value
+                    ? Colors.white
+                    : Colors.black,
               ),
             ),
           ),
           centerTitle: false,
+          actions: [
+            IconButton(
+              onPressed: () => showConfirmationDialog(context),
+              icon: Icon(
+                Icons.home,
+                color: themeController.isDarkTheme.value
+                    ? Colors.white
+                    : Colors.black,
+              ),
+            ),
+          ],
         ),
         body: Obx(
               () {
@@ -70,9 +85,10 @@ class GenericCategoryScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (relatedCategories.isNotEmpty) ...[
-                      _buildSectionHeader("Related Categories", themeController, w),
+                      _buildSectionHeader(
+                          "Related Categories", themeController, w),
                       ...relatedCategories.map((category) {
-                        return buildItemContainer(
+                        return CategoryContainer(
                           w,
                           h,
                           langController,
@@ -86,7 +102,7 @@ class GenericCategoryScreen extends StatelessWidget {
                     if (issues.isNotEmpty) ...[
                       _buildSectionHeader("Issues", themeController, w),
                       ...issues.map((issue) {
-                        return buildItemContainer(
+                        return IssusContainer(
                           w,
                           h,
                           langController,
@@ -107,7 +123,8 @@ class GenericCategoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, ThemeController themeController, double w) {
+  Widget _buildSectionHeader(
+      String title, ThemeController themeController, double w) {
     return Padding(
       padding: EdgeInsets.only(top: 20, bottom: 10),
       child: Text(
@@ -115,7 +132,8 @@ class GenericCategoryScreen extends StatelessWidget {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+          color:
+          themeController.isDarkTheme.value ? Colors.white : Colors.black,
         ),
       ),
     );
