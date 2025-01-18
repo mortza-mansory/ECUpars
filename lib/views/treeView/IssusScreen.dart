@@ -7,6 +7,7 @@ import 'package:treenode/controllers/utills/ThemeController.dart';
 import 'package:treenode/services/api/config/endpoint.dart';
 import 'package:treenode/views/home/homeScreen.dart';
 import 'package:treenode/views/treeView/StepScreen.dart';
+import 'package:treenode/views/treeView/extention/TextExtention.dart';
 import 'package:treenode/views/treeView/extention/imgext.dart';
 
 class Issusscreen extends StatelessWidget {
@@ -65,66 +66,49 @@ class Issusscreen extends StatelessWidget {
           ),
           centerTitle: false,
         ),
-        body: Obx(
-              () {
-            if (issueController.isLoading.value) {
-              return _buildLoadingScreen(themeController);
-            }
-            final issue = issueController.issue;
-            final question = issueController.question;
-            return SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: w * 0.06),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSectionHeader("Issue Title", themeController, w),
-                    Text(issue['title'] ?? '', style: TextStyle(fontSize: 16)),
-                    SizedBox(height: h * 0.003),
-                    _buildSectionHeader("Description", themeController, w),
-                    Html(
-                      data: issue['description'] ??
-                          '<p>No description available.</p>',
-                      extensions: [
-                        ImageExtension(
-                          //اینم نشد...
-                          // builder: (ExtensionContext context) {
-                          //   String src = context.attributes['src'] ?? '';
-                          //   String baseUrl = "https://django-noxeas.chbk.app";
-                          //   String modifiedSrc = "$baseUrl$src";
-                          //   print("Constructed image URL: $modifiedSrc");
-                          //   return Image.network(modifiedSrc, fit: BoxFit.cover);
-                          // },
-                        ),
-                      ],
-                      style: {
-                        "body": Style(
-                          fontSize: FontSize.medium,
-                          fontFamily: "Sarbaz",
-                          color: themeController.isDarkTheme.value ? Colors
-                              .white : Colors.black,
-                        ),
-                      },
-                    ),
-                    SizedBox(height: h * 0.003),
-                    _buildSectionHeader("Additional Info", themeController, h),
-                    Text('Created by: ${issue['created_by']}',
-                        style: TextStyle(fontSize: 16)),
-                    Text('Created at: ${issue['created_at']}',
-                        style: TextStyle(fontSize: 16)),
+        body: Obx(() {
+          if (issueController.isLoading.value) {
+            return _buildLoadingScreen(themeController);
+          }
+          final issue = issueController.issue;
+          final question = issueController.question;
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: w * 0.06),
 
-                    SizedBox(height: h * 0.02),
-                    _buildSectionHeader("Related Question", themeController, w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader("Issue Title", themeController, w),
+                  Text(issue['title'] ?? '', style: TextStyle(fontSize: 16)),
+                  SizedBox(height: h * 0.003),
+                  _buildSectionHeader("Description", themeController, w),
 
-                    if (question.isNotEmpty) QuestionSection(
-                        question, question['options'] ?? [], w) else
-                      Text("No relaated quastions.")
-                  ],
-                ),
+                  Html(
+                    data: issue['description'],
+                    extensions: [
+                      ImageExtention(),
+                      TextExtension()
+                    ],
+                  ),
+                  SizedBox(height: h * 0.003),
+                  _buildSectionHeader("Additional Info", themeController, h),
+                  Text('Created by: ${issue['created_by']}',
+                      style: TextStyle(fontSize: 16)),
+                  Text('Created at: ${issue['created_at']}',
+                      style: TextStyle(fontSize: 16)),
+                  SizedBox(height: h * 0.02),
+                  _buildSectionHeader("Related Question", themeController, w),
+
+                  if (question.isNotEmpty)
+                    QuestionSection(question, question['options'] ?? [], w)
+                  else
+                    Text("No related questions."),
+                ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        }),
       ),
     );
   }
@@ -178,25 +162,25 @@ class Issusscreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     if (option['next_step_id'] == null) {
+                      print("no stepid");
                       if (option['issue_id'] != null) {
                         Get.to(() => Issusscreen(issueId: option['issue_id']));
                       } else {
                         Get.snackbar(
                           "Error",
-                          "We don't have any route called this.",
+                          "No issue ID available for this option.",
                           snackPosition: SnackPosition.BOTTOM,
                           backgroundColor: Colors.red,
                           colorText: Colors.white,
                         );
                       }
                     } else {
+                     print("Navigating to Step Screen with Step ID: ${option['next_step_id']}");
                       Get.to(() => StepScreen(stepId: option['next_step_id']));
                     }
                   },
                   child: Text("Go"),
                 )
-
-
               ],
             );
           }).toList(),

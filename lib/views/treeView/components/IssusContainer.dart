@@ -7,7 +7,6 @@ import 'package:treenode/views/treeView/IssusScreen.dart';
 
 final categoryController = Get.find<CategoryController>();
 Widget IssusContainer(
-
     double w,
     double h,
     LangController langController,
@@ -24,88 +23,57 @@ Widget IssusContainer(
       color: Colors.grey.shade600.withOpacity(0.7),
       borderRadius: BorderRadius.circular(24),
     ),
-    child: Padding(
-      padding: EdgeInsets.fromLTRB(
-        w * 0.02,
-        h * 0.018,
-        w * 0.04,
-        h * 0.00,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!langController.isRtl)
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: w * 0.04,
-                    fontWeight: FontWeight.bold,
-                    color: themeController.isDarkTheme.value
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                ),
-            ],
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Centered title text
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: w * 0.04,
+            fontWeight: FontWeight.bold,
+            color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
           ),
-          //    SizedBox(height: h * 0.07),
-          // Row(
-          //   children: [
-          //     Text(
-          //       date,
-          //       style: TextStyle(
-          //         color: themeController.isDarkTheme.value
-          //             ? Colors.white70
-          //             : Colors.black54,
-          //       ),
-          //     ),
-          //   ],
-          // ),
-          SizedBox(height: h * 0.02),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(w*0.08, h*0.06),
-                  backgroundColor: themeController.isDarkTheme.value ? Colors.white : Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                onPressed: () {
-                  Get.to(() => Issusscreen(issueId: categoryId));
-                },
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: w * 0.03),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "View",
-                        style: TextStyle(
-                          fontFamily: "Sarbaz",
-                          fontSize: w * 0.035,
-                          color: themeController.isDarkTheme.value ? Colors.black : Colors.white,
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward,
-                        color: Colors.blueAccent,
-                      ),
-                    ],
-                  ),
-                ),
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: h * 0.02),
+        // Centered button with fixed dimensions
+        SizedBox(
+          width: w * 0.3,
+          height: h * 0.06,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size(w * 0.08, h * 0.06),
+              backgroundColor: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
               ),
-            ],
+            ),
+            onPressed: () {
+              Get.to(() => Issusscreen(issueId: categoryId));
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "View".tr,
+                  style: TextStyle(
+                    fontFamily: "Sarbaz",
+                    fontSize: w * 0.035,
+                    color: themeController.isDarkTheme.value ? Colors.black : Colors.white,
+                  ),
+                ),
+                SizedBox(width: w * 0.02),
+                const Icon(
+                  Icons.arrow_forward,
+                  color: Colors.blueAccent,
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }

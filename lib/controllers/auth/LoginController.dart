@@ -3,7 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:treenode/services/api/HttpService.dart';
-import 'package:treenode/views/auth/heroScreen.dart';
+import 'package:treenode/views/auth/startScreen.dart';
 import 'package:treenode/views/auth/otpScreen.dart';
 
 class LoginController extends GetxController {
@@ -44,19 +44,41 @@ class LoginController extends GetxController {
     isLoading.value = true;
     try {
       final response = await httpService.login(username, password);
+
+      if (response.isEmpty) {
+        // Handle empty response from the HTTP service
+        errorMessage.value = "Login failed. Server returned an empty response.";
+        return;
+      }
+
       if (response['login_status'] == 'pending') {
         sessionId.value = response['session_id'];
         isOtpSent.value = true;
         storage.write('session_id', sessionId.value);
         otpReceived.value = response['otp'].toString();
-        Get.to(()=> OtpScreen());
+        Get.to(() => OtpScreen());
         _showOtpInSnackbar();
+      } else if (response['login_status'] == 'failed') {
+        isOtpSent.value = false;
+        errorMessage.value = response['error'] ?? "Invalid username or password.";
+        Get.snackbar(
+          'Login Failed',
+          errorMessage.value,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: Duration(seconds: 5),
+        );
       } else {
         isOtpSent.value = false;
-        errorMessage.value = "Login failed. Please try again.";
+        errorMessage.value = "Unexpected login status: ${response['login_status']}.";
       }
     } catch (e) {
-      errorMessage.value = "An error occurred during login.";
+      errorMessage.value = "An error occurred during login: $e";
+      Get.snackbar(
+        'Login Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+        duration: Duration(seconds: 5),
+      );
     } finally {
       isLoading.value = false;
     }
@@ -80,7 +102,7 @@ class LoginController extends GetxController {
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (Get.currentRoute != '/home') {
-            Get.offAndToNamed('/home');
+            Get.offAllNamed('/home');
           }
         });
       } else {
@@ -112,16 +134,11 @@ class LoginController extends GetxController {
     //BUG login after log out its here:
    // await setLoggedIn(false);
     await storage.erase();
-
     isOtpValid.value = false;
     isOtpSent.value = false;
     sessionId.value = '';
 
   }
-
-
-
-
   void _showOtpInSnackbar() {
     if (otpReceived.isNotEmpty) {
       Get.snackbar(
@@ -136,8 +153,7 @@ class LoginController extends GetxController {
           },
           child: Text('Close'),
         ),
-        backgroundColor: Colors.blue,
-        colorText: Colors.white,
+        colorText: Colors.transparent.withOpacity(0.75),
         borderRadius: 10,
         margin: EdgeInsets.all(16),
       );
@@ -170,6 +186,7 @@ class LoginController extends GetxController {
     otpTextLength.value = otp.length;
     isOtpValid.value = otp.length >= 4;
   }
+
   bool isotpValid(){
     if(otpTextLength.value >3)
       {

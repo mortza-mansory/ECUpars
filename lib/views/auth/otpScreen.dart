@@ -15,7 +15,7 @@ class OtpScreen extends StatelessWidget {
     final ThemeController themeController = Get.find<ThemeController>();
 
     double a = MediaQuery.of(context).size.width;
-    double n = 0.5 * a;
+    double n = 0.75 * a;
     double r = 0.02 * n;
 
     return Directionality(

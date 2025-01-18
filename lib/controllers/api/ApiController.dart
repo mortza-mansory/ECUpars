@@ -50,6 +50,8 @@ class ApiController extends GetxController {
     } catch (e) {
       print("Error loading PNG assets from cache: $e");
       _errorController.logError("Error loading PNG assets from cache: $e");
+   //   Future.delayed(Duration(seconds: 2));
+     // Get.("/start");
       await fetchAndCachePngAssets();
     }
   }

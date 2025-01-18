@@ -209,6 +209,7 @@ class CategoryController extends GetxController {
   void navigateToCategoryDetails(int categoryId, {bool isRoute = false}) {
     if (isRoute) {
       rootCategoryId = categoryId;
+      navigationStack.clear();
     } else {
       if (navigationStack.isEmpty || navigationStack.last != categoryId) {
         navigationStack.add(categoryId);
@@ -226,6 +227,7 @@ class CategoryController extends GetxController {
       }
     });
   }
+
 
   void navigateBack() {
     if (navigationStack.length > 1) {

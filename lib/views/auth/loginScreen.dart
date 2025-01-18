@@ -16,9 +16,15 @@ class LoginScreen extends StatelessWidget {
     final ThemeController themeController = Get.find<ThemeController>();
 
     double a = MediaQuery.of(context).size.width;
-    double n = 0.5 * a;
+    double n = 0.70 * a;
     double r = 0.02 * n;
 
+    // if (loginController.isLoggedIn) {
+    //   print(loginController.isLoggedIn);
+    //   WidgetsBinding.instance.addPostFrameCallback((_) {
+    //     Get.offAndToNamed('/home');
+    //   });
+    // }
     return Directionality(
       textDirection: langController.isRtl ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
@@ -153,7 +159,7 @@ class LoginScreen extends StatelessWidget {
               SizedBox(height: 50),
               Obx(() => ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  fixedSize: Size(n, 60),
+                  fixedSize: Size(n-10, 60),
                   elevation: 7,
                   shadowColor: Colors.black,
                   backgroundColor: loginController.isFormValid()

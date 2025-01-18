@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:get_storage/get_storage.dart';
 import 'package:path_provider/path_provider.dart';
@@ -49,21 +50,17 @@ class HttpService {
       _logResponse("POST", url, response);
 
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        if (jsonData['login_status'] == 'pending') {
-          String sessionId = jsonData['session_id'];
-          _storage.write('session_id', sessionId);
-          return jsonData;
-        } else {
-          print("Login failed, status: ${jsonData['login_status']}");
-        }
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 400) {
+        return jsonDecode(response.body);
       } else {
         print("Login failed, status code: ${response.statusCode}");
+        return {'error': 'Unexpected error occurred. Please try again later.'};
       }
     } catch (e) {
       print("Error during login: $e");
+      return {'error': 'Network error. Please check your connection.'};
     }
-    return {};
   }
 
   Future<bool> verifyOtp(int otp) async {
@@ -112,27 +109,17 @@ class HttpService {
     return false;
   }
 
-  bool isAccessTokenExpired() {
-    if (accessTokenExpiry == null) return true;
-    return DateTime.now().isAfter(accessTokenExpiry!);
-  }
-
-/*
-  Future<List<Map<String, dynamic>>> fetchPngAssets() async {
+  //----------------------------------------------------Access code-----------------------------------------------------------------
+  Future<bool> isAccessTokenExpired() async {
     String? accessToken = _storage.read('access_token');
-    if (accessToken == null || accessToken.isEmpty) {
-      print("No access token available. Cannot fetch PNG assets.");
-      return [];
-    }
 
-    if (isAccessTokenExpired()) {
-      print("Access token expired. Cannot fetch PNG assets.");
-      return [];
+    if (accessToken == null || accessToken.isEmpty) {
+      print("No access token available. Token is considered expired.");
+      return true;
     }
 
     String url = '${Endpoint.httpAddress}/api/v1/cars/';
     try {
-      print("Fetching PNG assets from: $url");
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -141,36 +128,46 @@ class HttpService {
         },
       );
 
-      _logResponse("GET", url, response);
-
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final cars = jsonData['cars'] as List;
-        print(
-            "PNG assets fetched successfully. Number of cars: ${cars.length}");
-
-        return cars
-            .where((car) =>
-        car['logo'] != null &&
-            car['logo'].toString().endsWith('.png'))
-            .map<Map<String, dynamic>>((car) =>
-        {
-          'text': car['name'],
-          'png': constructMediaUrl(car['logo']),
-        })
-            .toList();
+        print("Access token is valid.");
+        return false;
+      } else if (response.statusCode == 401) {
+        print("Access token is invalid or expired.");
+        await _clearAccessToken();
+        Get.offAndToNamed('/start');
+        return true;
       } else {
-        print(
-            "Failed to fetch PNG assets, status code: ${response.statusCode}");
+        print("Unexpected response from the server: ${response.statusCode}");
+        return true;
       }
     } catch (e) {
-      print("Error while fetching PNG assets: $e");
+      print("Error while validating access token: $e");
+      return true;
     }
-    return [];
   }
 
- */
+  bool isAccessTokenExpiredSync() {
+    String? accessToken = _storage.read('access_token');
 
+    if (accessToken == null || accessToken.isEmpty) {
+      print("No access token available. Token is considered expired.");
+      return true;
+    }
+
+    if (accessTokenExpiry == null) {
+      print("Access token expiry date is not set. Token is considered expired.");
+      return true;
+    }
+
+    return DateTime.now().isAfter(accessTokenExpiry!);
+  }
+
+  Future<void> _clearAccessToken() async {
+    await _storage.remove('access_token');
+    print("Access token has been cleared.");
+  }
+
+//----------------------------Get url--------------------------------------------------------------------------------
   Future<Map<String, dynamic>> get(String url) async {
     String? accessToken = _storage.read('access_token');
     if (accessToken == null || accessToken.isEmpty) {
@@ -207,7 +204,6 @@ class HttpService {
     }
     String url =
         '${Endpoint.httpAddress}/api/v1/cars/$categoryId/?include_issues=$includeIssues&include_related_categories=$includeRelatedCategories';
-
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -289,6 +285,12 @@ class HttpService {
 
   //----------------------------------for ads---------------------------------------------------------------------------------------------------------------------------------------
   Future<List<Map<String, dynamic>>> fetchAds() async {
+
+    if (await isAccessTokenExpired()) {
+      print("Access token expired. Cannot fetch PNG assets.");
+      Get.offAndToNamed('/start');
+      return [];
+    }
     try {
       String url = '${Endpoint.httpAddress}/api/v1/advertisements/';
       final response = await http.get(
@@ -319,7 +321,7 @@ class HttpService {
       return [];
     }
 
-    if (isAccessTokenExpired()) {
+    if (await isAccessTokenExpired()) {
       print("Access token expired. Cannot fetch PNG assets.");
       return [];
     }
@@ -403,3 +405,59 @@ class HttpService {
   }
 
 }
+
+
+
+/*
+  Future<List<Map<String, dynamic>>> fetchPngAssets() async {
+    String? accessToken = _storage.read('access_token');
+    if (accessToken == null || accessToken.isEmpty) {
+      print("No access token available. Cannot fetch PNG assets.");
+      return [];
+    }
+
+    if (isAccessTokenExpired()) {
+      print("Access token expired. Cannot fetch PNG assets.");
+      return [];
+    }
+
+    String url = '${Endpoint.httpAddress}/api/v1/cars/';
+    try {
+      print("Fetching PNG assets from: $url");
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      _logResponse("GET", url, response);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final cars = jsonData['cars'] as List;
+        print(
+            "PNG assets fetched successfully. Number of cars: ${cars.length}");
+
+        return cars
+            .where((car) =>
+        car['logo'] != null &&
+            car['logo'].toString().endsWith('.png'))
+            .map<Map<String, dynamic>>((car) =>
+        {
+          'text': car['name'],
+          'png': constructMediaUrl(car['logo']),
+        })
+            .toList();
+      } else {
+        print(
+            "Failed to fetch PNG assets, status code: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error while fetching PNG assets: $e");
+    }
+    return [];
+  }
+
+ */

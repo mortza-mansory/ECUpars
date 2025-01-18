@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:treenode/controllers/auth/AccessController.dart';
+import 'package:treenode/controllers/middleware/AuthMiddleController.dart';
 import 'package:treenode/views/loading/LoadingScreen.dart';
 import 'package:treenode/controllers/utills/components/appTheme.dart';
 import 'package:treenode/controllers/utills/components/translator.dart';
-import 'package:treenode/views/auth/heroScreen.dart';
+import 'package:treenode/views/auth/startScreen.dart';
 import 'package:treenode/views/auth/loginScreen.dart';
 import 'package:treenode/views/home/homeScreen.dart';
 import 'bindings/bindings.dart';
@@ -25,16 +27,16 @@ class ECUPARS extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeController themeController = Get.put(ThemeController(), permanent: true);
     final LangController langController = Get.put(LangController(), permanent: true);
-
+    final AccessController accessController = Get.put(AccessController(), permanent:  true);
     return Obx(() {
       return GetMaterialApp(
         debugShowCheckedModeBanner: false,
         initialBinding: MyBindings(),
         getPages: [
-          GetPage(name: '/loading', page: () => LoadingScreen()),
+          GetPage(name: '/loading', page: () => LoadingScreen(),),
           GetPage(name: '/l', page: () => LoginScreen()),
           GetPage(name: '/start', page: () => StartScreen()),
-          GetPage(name: '/home', page: () => Homescreen())
+          GetPage(name: '/home', page: () => Homescreen(),middlewares:[AuthMiddleware()]),
         ],
         initialRoute: '/loading',
         title: 'TreeNode',
@@ -42,8 +44,9 @@ class ECUPARS extends StatelessWidget {
             ? AppTheme.darkTheme
             : AppTheme.lightTheme,
         locale: Locale(langController.selectedLanguage.value),
-        fallbackLocale: Locale('fa'),
+        fallbackLocale: Locale('en'),
         translations: Translator(),
+
       );
     });
   }

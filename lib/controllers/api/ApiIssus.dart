@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:treenode/services/api/HttpService.dart';
 import 'package:treenode/views/treeView/IssusScreen.dart';
+import 'dart:convert';
 
 class IssueController extends GetxController {
+
   var issue = <String, dynamic>{}.obs;
   var question = <String, dynamic>{}.obs;
   var isLoading = false.obs;
 
   var stepDetails = <String, dynamic>{}.obs;
+  var stepQuestion = <String, dynamic>{}.obs;
   var isStepLoading = false.obs;
 
   final HttpService httpService = HttpService();
@@ -17,21 +20,21 @@ class IssueController extends GetxController {
   final List<int> navigationStack = [];
 
   String _decodeUtf8(String text) {
-    return utf8.decode(text.runes.toList(), allowMalformed: true);
+    if (text.isEmpty) return text;
+    try {
+      List<int> bytes = latin1.encode(text);
+      var out = utf8.decode(bytes, allowMalformed: true);
+      print(out);
+      return out;
+    } catch (e) {
+      print("Error decoding: $e");
+      return text;
+    }
   }
-
-  final Map<int, Map<String, dynamic>> issueCache = {};
 
   Future<void> loadIssueDetails(int issueId) async {
     isLoading.value = true;
     try {
-      if (issueCache.containsKey(issueId)) {
-        issue.assignAll(issueCache[issueId]!);
-        question.assignAll(Map<String, dynamic>.from(issueCache[issueId]!['question'] ?? {}));
-        print("Using cached Issue Details: $issue");
-        return;
-      }
-
       final Map<String, dynamic> data = await httpService.fetchIssueDetails(issueId);
       print("Fetched Issue Details: $data");
 
@@ -60,7 +63,6 @@ class IssueController extends GetxController {
 
       issue.assignAll(issueDetails);
       question.assignAll(Map<String, dynamic>.from(questionDetails));
-      issueCache[issueId] = issueDetails;
 
       print("Assigned Issue Details: ${issue['description']}");
       print("Assigned Question Details: $question");
@@ -87,8 +89,11 @@ class IssueController extends GetxController {
       print("Fetched Step Details: $data");
 
       final stepData = data['step'] ?? {};
-      final questionData = data['question'] ?? {};
-      final question = stepData['question'] ?? {};
+      final stepQuestionData = data['question'] ?? {};
+      final stepOptionsList = data['options'] ?? [];
+
+      stepData['title'] = _decodeUtf8(stepData['title'] ?? '');
+      stepData['description'] = _decodeUtf8(stepData['description'] ?? '');
 
       if (stepData['issue'] != null) {
         stepData['issue'] = _decodeUtf8(stepData['issue']);
@@ -99,16 +104,14 @@ class IssueController extends GetxController {
       if (stepData['letter'] != null) {
         stepData['letter'] = _decodeUtf8(stepData['letter']);
       }
-
-      if (question is Map<String, dynamic>) {
-        if (question['text'] != null) {
-          question['text'] = _decodeUtf8(question['text']);
+      if (stepQuestionData is Map<String, dynamic>) {
+        if (stepQuestionData['text'] != null) {
+          stepQuestionData['text'] = _decodeUtf8(stepQuestionData['text']);
         }
       }
 
-      final optionsList = data['options'] ?? [];
-      if (optionsList is List) {
-        question['options'] = optionsList.map((option) {
+      if (stepOptionsList is List) {
+        stepQuestionData['options'] = stepOptionsList.map((option) {
           return {
             ...option,
             'text': _decodeUtf8(option['text'] ?? ''),
@@ -117,10 +120,10 @@ class IssueController extends GetxController {
       }
 
       stepDetails.assignAll(stepData);
-      this.question.assignAll(Map<String, dynamic>.from(question));
+      stepQuestion.assignAll(Map<String, dynamic>.from(stepQuestionData));
 
       print("Assigned Step Details: ${stepDetails['issue']}");
-      print("Assigned Question Details: $question");
+      print("Assigned Step Question Details: $stepQuestion");
 
     } catch (e) {
       print("Error loading step details: $e");
@@ -143,7 +146,7 @@ class IssueController extends GetxController {
       if (navigationStack.isNotEmpty) {
         final previousIssueId = navigationStack.last;
         loadIssueDetails(previousIssueId).then((_) {
-          Get.off(() => Issusscreen(issueId: previousIssueId));
+          Get.to(() => Issusscreen(issueId: previousIssueId));
         });
       } else {
         Get.back();
