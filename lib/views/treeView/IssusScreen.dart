@@ -7,6 +7,8 @@ import 'package:treenode/controllers/utills/ThemeController.dart';
 import 'package:treenode/services/api/config/endpoint.dart';
 import 'package:treenode/views/home/homeScreen.dart';
 import 'package:treenode/views/treeView/StepScreen.dart';
+import 'package:treenode/views/treeView/components/BoxCardsQuastions.dart';
+import 'package:treenode/views/treeView/components/BoxCardsSteps.dart';
 import 'package:treenode/views/treeView/extention/TextExtention.dart';
 import 'package:treenode/views/treeView/extention/imgext.dart';
 
@@ -21,14 +23,8 @@ class Issusscreen extends StatelessWidget {
     final themeController = Get.find<ThemeController>();
     final langController = Get.find<LangController>();
 
-    double h = MediaQuery
-        .of(context)
-        .size
-        .height;
-    double w = MediaQuery
-        .of(context)
-        .size
-        .width;
+    double h = MediaQuery.of(context).size.height;
+    double w = MediaQuery.of(context).size.width;
 
     issueController.loadIssueDetails(issueId);
 
@@ -44,8 +40,8 @@ class Issusscreen extends StatelessWidget {
               ? const Color.fromRGBO(44, 45, 49, 1)
               : const Color.fromRGBO(255, 250, 244, 1),
           iconTheme: IconThemeData(
-            color: themeController.isDarkTheme.value ? Colors.white : Colors
-                .black,
+            color:
+                themeController.isDarkTheme.value ? Colors.white : Colors.black,
           ),
           elevation: 0,
           leading: IconButton(
@@ -53,16 +49,15 @@ class Issusscreen extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
           ),
           title: Obx(
-                () =>
-                Text(
-                  issueController.issue['title'] ?? 'Issue Details',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: themeController.isDarkTheme.value
-                        ? Colors.white
-                        : Colors.black,
-                  ),
-                ),
+            () => Text(
+              issueController.issue['title'] ?? 'Issue Details',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: themeController.isDarkTheme.value
+                    ? Colors.white
+                    : Colors.black,
+              ),
+            ),
           ),
           centerTitle: false,
         ),
@@ -75,33 +70,19 @@ class Issusscreen extends StatelessWidget {
           return SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: w * 0.06),
-
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader("Issue Title", themeController, w),
-                  Text(issue['title'] ?? '', style: TextStyle(fontSize: 16)),
-                  SizedBox(height: h * 0.003),
-                  _buildSectionHeader("Description", themeController, w),
-
-                  Html(
-                    data: issue['description'],
-                    extensions: [
-                      ImageExtention(),
-                      TextExtension()
-                    ],
+                  BoxCards(
+                    title: issue['title'] ?? '',
+                    description: issue['description'] ?? '',
+                    h: h,
                   ),
-                  SizedBox(height: h * 0.003),
-                  _buildSectionHeader("Additional Info", themeController, h),
-                  Text('Created by: ${issue['created_by']}',
-                      style: TextStyle(fontSize: 16)),
-                  Text('Created at: ${issue['created_at']}',
-                      style: TextStyle(fontSize: 16)),
                   SizedBox(height: h * 0.02),
-                  _buildSectionHeader("Related Question", themeController, w),
-
+               //   _buildSectionHeader("Related Question", themeController, w),
+                  SizedBox(height: h * 0.02),
                   if (question.isNotEmpty)
-                    QuestionSection(question, question['options'] ?? [], w)
+                    BoxCardsQuastions(question, question['options'] ?? [],themeController,w)
                   else
                     Text("No related questions."),
                 ],
@@ -113,21 +94,21 @@ class Issusscreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, ThemeController themeController,
-      double h) {
-    return Padding(
-      padding: EdgeInsets.only(top: h * 0.006, bottom: h * 0.003),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: themeController.isDarkTheme.value ? Colors.white : Colors
-              .black,
-        ),
-      ),
-    );
-  }
+  // Widget _buildSectionHeader(
+  //     String title, ThemeController themeController, double h) {
+  //   return Padding(
+  //     padding: EdgeInsets.only(top: h * 0.006, bottom: h * 0.003),
+  //     child: Text(
+  //       title,
+  //       style: TextStyle(
+  //         fontSize: 18,
+  //         fontWeight: FontWeight.bold,
+  //         color:
+  //             themeController.isDarkTheme.value ? Colors.white : Colors.black,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildLoadingScreen(ThemeController themeController) {
     return Center(
@@ -137,56 +118,6 @@ class Issusscreen extends StatelessWidget {
     );
   }
 
-  Widget QuestionSection(Map<String, dynamic> question, List<dynamic> options,
-      double w) {
-    // Debugging the options
-    print("Options in QuestionSection: $options");
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          question['text'] ?? "No question available.",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        SizedBox(height: w * 0.02),
-        if (options.isEmpty)
-          Text("No options available.")
-        else
-          ...options.map((option) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(option['text'] ?? "No text",
-                    style: TextStyle(fontSize: 14)),
-                ElevatedButton(
-                  onPressed: () {
-                    if (option['next_step_id'] == null) {
-                      print("no stepid");
-                      if (option['issue_id'] != null) {
-                        Get.to(() => Issusscreen(issueId: option['issue_id']));
-                      } else {
-                        Get.snackbar(
-                          "Error",
-                          "No issue ID available for this option.",
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white,
-                        );
-                      }
-                    } else {
-                     print("Navigating to Step Screen with Step ID: ${option['next_step_id']}");
-                      Get.to(() => StepScreen(stepId: option['next_step_id']));
-                    }
-                  },
-                  child: Text("Go"),
-                )
-              ],
-            );
-          }).toList(),
-      ],
-    );
-  }
 
 
   void showConfirmationDialog(BuildContext context) {

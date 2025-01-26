@@ -26,15 +26,18 @@ class ImageExtention extends HtmlExtension {
             onTap: () {
               _showFocusMode(buildContext, src);
             },
-            child: Image.network(
-              src,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(child: CircularProgressIndicator());
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return const SizedBox.shrink();
-              },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12.0), // Circular edges
+              child: Image.network(
+                src,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(child: CircularProgressIndicator());
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
           );
         },

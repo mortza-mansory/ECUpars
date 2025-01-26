@@ -1,98 +1,241 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
-import 'package:treenode/models/FilterModel.dart';
+import 'package:treenode/services/api/HttpService.dart';
 
 class SearchingController extends GetxController {
   var selectedCategory = "".obs;
   var selectedSubcategory = <String>[].obs;
-  var selectedIssue = "".obs;
   var searchText = ''.obs;
-  var isFiltered = false.obs;
-  var selectedCategories = <String>[].obs;
+
+  var errorResults = <Map<String, dynamic>>[].obs;
+  var stepResults = <Map<String, dynamic>>[].obs;
+  var mapResults = <Map<String, dynamic>>[].obs;
+
+  var allSelectedCategories = <String>[].obs;
   var allSelectedSubcategories = <String>[].obs;
 
-  final Map<String, List<String>> categorySubcategories = {
-    'Apple': ['Red', 'Green', 'Golden'],
-    'Orange': ['Navel', 'Blood Orange', 'Mandarin'],
-    'Banana': ['Cavendish', 'Red', 'Plantain'],
-    'Grapes': ['Red', 'Green', 'Black'],
-    'Mango': ['Alphonso', 'Himsagar', 'Kesar'],
-    'Pineapple': ['Sweet', 'Sour']
-  };
-  var filterStack = <FilterModel>[].obs;
+  RxList<Map<String, dynamic>> categories = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> subcategories = <Map<String, dynamic>>[].obs;
 
-  void updateSearchText(String value) {
-    searchText.value = value;
+  RxList<String> categorySuggestions = <String>[].obs;
+  RxMap<String, int> categoryIdMap = <String, int>{}.obs;
+
+  RxBool isFiltered = false.obs;
+  RxBool isLoadingSubcategories = false.obs;
+  RxBool isLoadingCategories = false.obs;
+  RxBool isLoadingResults = false.obs;
+
+  RxList<int> expandedCategories = <int>[].obs;
+
+  RxString radioSelection = 'allYes'.obs;
+
+  final HttpService _httpService = HttpService();
+
+  RxList<Map<String, dynamic>> get searchResults {
+    return [
+      ...errorResults,
+      ...stepResults,
+      ...mapResults,
+    ].obs;
   }
 
-  void updateCategory(String category) {
-    selectedCategory.value = category;
-    selectedSubcategory.clear();
-    isFiltered.value = true;
+  @override
+  void onInit() {
+    super.onInit();
+    fetchCategories();
   }
 
-  void updateSubcategories() {
-    if (selectedCategory.value.isNotEmpty && selectedSubcategory.isEmpty) {
-      selectedSubcategory.addAll(categorySubcategories[selectedCategory.value] ?? []);
+  Future<void> fetchCategories() async {
+    if (categories.isNotEmpty) return;
+    try {
+      isLoadingCategories.value = true;
+      List<Map<String, dynamic>> fetchedCategories =
+      await _httpService.fetchPngAssets();
+      categories.value = fetchedCategories;
+      categorySuggestions.value =
+          fetchedCategories.map((e) => e['text'] as String).toList();
+      categoryIdMap.value = {
+        for (var category in fetchedCategories) category['text']: category['id'] as int
+      };
+    } catch (e) {
+      if (e.toString().contains('401')) {
+        Get.offAllNamed('/login');
+      } else {
+        print("Error fetching categories: $e");
+      }
+    } finally {
+      isLoadingCategories.value = false;
     }
   }
 
-  void selectSubcategory(String subcategory) {
-    if (!allSelectedSubcategories.contains(subcategory)) {
-      allSelectedSubcategories.add(subcategory);
+
+  Future<void> fetchSubcategories(int categoryId) async {
+    isLoadingSubcategories.value = true;
+    try {
+      var categoryDetails = await _httpService.fetchCategoryDetails(
+        categoryId,
+        false,
+        true,
+      );
+      var fetchedSubcategories =
+      categoryDetails['related_categories'] as List<dynamic>;
+      subcategories.value =
+          fetchedSubcategories.map((e) => e as Map<String, dynamic>).toList();
+    } catch (e) {
+      if (e.toString().contains('401')) {
+        Get.offAllNamed('/login');
+      } else {
+        print("Error fetching subcategories: $e");
+      }
+    } finally {
+      isLoadingSubcategories.value = false;
     }
   }
 
-  void removeSelectedSubcategory(String subcategory) {
-    allSelectedSubcategories.remove(subcategory);
-  }
-
-  void selectCategory(String category) {
-    if (!selectedCategories.contains(category)) {
-      selectedCategories.add(category);
+  void toggleCategoryExpansion(int categoryId) {
+    if (expandedCategories.contains(categoryId)) {
+      expandedCategories.remove(categoryId);
+    } else {
+      expandedCategories.clear();
+      expandedCategories.add(categoryId);
     }
   }
 
-  void removeSelectedCategory(String category) {
-    selectedCategories.remove(category);
-    final subcategoriesToRemove = categorySubcategories[category];
-    if (subcategoriesToRemove != null) {
-      allSelectedSubcategories.removeWhere((subcategory) =>
-          subcategoriesToRemove.contains(subcategory));
+
+  bool isCategorySelected(String categoryName) {
+    return allSelectedCategories.contains(categoryName);
+  }
+
+  void toggleCategorySelection(String categoryId, bool isSelected) {
+    if (isSelected) {
+      if (!allSelectedCategories.contains(categoryId)) {
+        allSelectedCategories.add(categoryId);
+
+        int id = int.parse(categoryId);
+        List<Map<String, dynamic>> relatedSubcategories = subcategories.where((s) => s['parent_category'] == id).toList();
+
+        for (var subcategory in relatedSubcategories) {
+          allSelectedSubcategories.add(subcategory['id'].toString());
+        }
+      }
+    } else {
+      allSelectedCategories.remove(categoryId);
+
+      int id = int.parse(categoryId);
+      List<Map<String, dynamic>> relatedSubcategories = subcategories.where((s) => s['parent_category'] == id).toList();
+
+      for (var subcategory in relatedSubcategories) {
+        allSelectedSubcategories.remove(subcategory['id'].toString());
+      }
     }
   }
 
-  RxList<String> get subcategories {
-    return (categorySubcategories[selectedCategory.value] ?? []).obs;
+  bool isSubcategorySelected(String subcategoryName) {
+    return allSelectedSubcategories.contains(subcategoryName);
+  }
+
+  void toggleSubcategorySelection(String subcategoryId, bool isSelected) {
+    if (isSelected) {
+      if (!allSelectedSubcategories.contains(subcategoryId)) {
+        allSelectedSubcategories.add(subcategoryId);
+      }
+    } else {
+      allSelectedSubcategories.remove(subcategoryId);
+    }
+  }
+
+
+  Map<int, List<Map<String, dynamic>>> get subcategoriesByCategory {
+    var grouped = <int, List<Map<String, dynamic>>>{};
+    for (var subcategory in subcategories) {
+      int parentId = subcategory['parent_category'];
+      if (!grouped.containsKey(parentId)) {
+        grouped[parentId] = [];
+      }
+      grouped[parentId]!.add(subcategory);
+    }
+    return grouped;
   }
 
   void applyFilters() {
-    final filterState = FilterModel(
-      selectedCategories: List.from(selectedCategories),
-      allSelectedSubcategories: List.from(allSelectedSubcategories),
-      searchText: searchText.value,
-    );
-    filterStack.add(filterState);
-
-    print("Filters applied: Categories - $selectedCategories, Subcategories - $allSelectedSubcategories");
-    isFiltered.value = true;
+    fetchSearchResults();
   }
 
-  void revertToLastFilter() {
-    if (filterStack.isNotEmpty) {
-      final lastFilterState = filterStack.last;
-      selectedCategories.value = lastFilterState.selectedCategories;
-      allSelectedSubcategories.value = lastFilterState.allSelectedSubcategories;
-      searchText.value = lastFilterState.searchText;
-      filterStack.removeLast();
+  Future<void> fetchSearchResults() async {
+    isLoadingResults.value = true;
+    try {
+      var results = await _httpService.fetchSearchResults(
+        query: searchText.value,
+        filterOptions: ['issues', 'solutions'],
+        categoryIds: allSelectedCategories.isNotEmpty
+            ? allSelectedCategories.map((category) => int.parse(category)).toList()
+            : [],
+        subcategoryId: allSelectedSubcategories.isNotEmpty
+            ? int.tryParse(allSelectedSubcategories.first)
+            : null,
+      );
 
-      print("Reverted to last filter: Categories - $selectedCategories, Subcategories - $allSelectedSubcategories");
+
+      errorResults.clear();
+      stepResults.clear();
+      mapResults.clear();
+
+      for (var result in results) {
+        switch (result['type']) {
+          case 'car':
+            mapResults.add(result);
+            break;
+          case 'issue':
+            errorResults.add(result);
+            break;
+          default:
+            break;
+        }
+      }
+    } catch (e) {
+      print("Error during search: $e");
+    } finally {
+      isLoadingResults.value = false;
     }
   }
 
-  RxList<String> get filteredResults {
-    var result = <String>[];
-    result.addAll(categorySubcategories.keys.where((item) =>
-        item.toLowerCase().contains(searchText.value.toLowerCase())));
-    return result.obs;
+  void updateSearchText(String value) {
+    searchText.value = value;
+    if (value.trim().isNotEmpty) {
+      fetchSearchResults();
+    }
+  }
+  void selectAll(bool isSelected) {
+    allSelectedCategories.clear();
+    allSelectedSubcategories.clear();
+
+    if (isSelected) {
+      for (var category in categories) {
+        allSelectedCategories.add(category['id'].toString());
+      }
+
+      for (var subcategory in subcategories) {
+        allSelectedSubcategories.add(subcategory['id'].toString());
+      }
+    }
+  }
+
+
+  Map<String, dynamic> _decodeUtf8(Map<String, dynamic> map) {
+    return map.map((key, value) {
+      if (value is String) {
+        return MapEntry(
+            key, utf8.decode(value.runes.toList(), allowMalformed: true));
+      } else {
+        return MapEntry(key, value);
+      }
+    });
+  }
+
+  String decodeUnicode(String input) {
+    Map<String, dynamic> tempMap = {"key": input};
+    Map<String, dynamic> decodedMap = _decodeUtf8(tempMap);
+    return decodedMap["key"];
   }
 }

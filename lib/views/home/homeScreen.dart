@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -179,9 +180,24 @@ class Homescreen extends StatelessWidget {
           runSpacing: 12,
           alignment: WrapAlignment.start,
           children: List.generate(apiController.pngAssetsList.length, (index) {
+            // Bug bakhshe karshenas sho
+            String decodeUnicode(String input) {
+              Map<String, dynamic> tempMap = {"key": input};
+              Map<String, dynamic> decodedMap = tempMap.map((key, value) {
+                if (value is String) {
+                  return MapEntry(
+                      key, utf8.decode(value.runes.toList(), allowMalformed: true));
+                } else {
+                  return MapEntry(key, value);
+                }
+              });
+              return decodedMap["key"];
+            }
+
             return _buildIconContainer(
               imagePath: apiController.pngAssetsList[index]['png'] ?? '',
-              categoryName: apiController.pngAssetsList[index]['text'] ?? '',
+              categoryName: decodeUnicode(
+                  apiController.pngAssetsList[index]['text'] ?? ''),
               font: apiController.pngAssetsList[index]['font'] ?? 'Sarbaz',
               fontWeight: apiController.pngAssetsList[index]['fontW'] ?? '600',
               containerColor: themeController.isDarkTheme.value

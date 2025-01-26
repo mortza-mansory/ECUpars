@@ -42,6 +42,11 @@ class _SearchScreenState extends State<SearchScreen> {
     return decodedMap["key"];
   }
 
+  //Comment out for automatic searching..
+  // void _onSearchChanged(String query) {
+  //   searchController.updateSearchText(query);
+  // }
+
   @override
   Widget build(BuildContext context) {
     adsController.loadADS();
@@ -71,7 +76,12 @@ class _SearchScreenState extends State<SearchScreen> {
                       Expanded(
                         child: TextField(
                           controller: _controller,
-                          onTap: () {},
+                       //   onChanged: _onSearchChanged, // Trigger search on text change
+                          onSubmitted: (String query) {
+                            // Trigger search on "Enter" key press
+                            searchController.updateSearchText(query);
+                            searchController.fetchSearchResults(); // Trigger search
+                          },
                           decoration: InputDecoration(
                             prefixIcon: Icon(
                               Icons.search,
@@ -96,13 +106,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       IconButton(
                         icon: Obx(() => Icon(
-                              searchController.isFiltered.value
-                                  ? Icons.filter_alt
-                                  : Icons.filter_alt_outlined,
-                              color: themeController.isDarkTheme.value
-                                  ? Colors.white
-                                  : Colors.black,
-                            )),
+                          searchController.isFiltered.value
+                              ? Icons.filter_alt
+                              : Icons.filter_alt_outlined,
+                          color: themeController.isDarkTheme.value
+                              ? Colors.white
+                              : Colors.black,
+                        )),
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -193,7 +203,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                               style: TextStyle(
                                 fontSize:
-                                    MediaQuery.of(context).size.height / 50,
+                                MediaQuery.of(context).size.height / 50,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -204,7 +214,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                               style: TextStyle(
                                 fontSize:
-                                    MediaQuery.of(context).size.height / 38,
+                                MediaQuery.of(context).size.height / 38,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -220,68 +230,92 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: TabBarView(
                 children: [
-                  SingleChildScrollView(
-                    child: Column(children: [
-                      AllResultContainer(
-                        title: "a dummy",
-                        description: "a dummy two..",
-                        logoUrl:
-                            'https://themindfool.com/wp-content/uploads/2020/02/personal-development-1.jpg',
+                  Obx(() {
+                    if (searchController.isLoadingResults.value) {
+                      return Center(child: CircularProgressIndicator(color: themeController.isDarkTheme.value ? Colors.white : Colors.black,));
+                    }
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: searchController.searchResults.map((result) {
+                          final data = result['data']['issue'] ?? {};
+                          return ResultContainer(
+                            title: data['title'] ?? 'No title',
+                            path: result['data']['full_category_name'] ?? 'Unknown',
+                            description: data['description'] ?? 'No description',
+                            logoUrl: result['icon_url'] ?? '',
+                            type: result['type'] ?? 'Unknown',
+                            id: data['id'] ?? 0,
+                          );
+                        }).toList(),
                       ),
-                      AllResultContainer(
-                        title: "a dummy",
-                        description: "a dummy two..a dummy two..a dummy a dummy to..a dummy a dummy to..a dummy a dummy to..a dummy a dummy to..a dummy a dummy to..a dummy a dummy to..a dummy a dummy to..a dummy a dummy to..a dummy a dummy to..a dummy a dummy to..a dummy a dummy two..a dummy two.",
-                        logoUrl:
-                        'https://themindfool.com/wp-content/uploads/2020/02/personal-development-1.jpg',
+                    );
+                  }),
+                  Obx(() {
+                    if (searchController.isLoadingResults.value) {
+                      return Center(child: CircularProgressIndicator(color: themeController.isDarkTheme.value ? Colors.black : Colors.white,));
+                    }
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: searchController.errorResults.map((result) {
+                          final data = result['data']['issue'] ?? {};
+                          return ResultContainer(
+                            title: data['title'] ?? 'No title',
+                            path: result['data']['full_category_name'] ?? 'Unknown',
+                            description: data['description'] ?? 'No description',
+                            logoUrl: result['icon_url'] ?? '',
+                            type: result['type'] ?? 'Error',
+                            id: data['id'] ?? 0,
+                          );
+                        }).toList(),
                       ),
-                      AllResultContainer(
-                        title: "a dummy",
-                        description: "a dummy two..",
-                        logoUrl:
-                        'https://themindfool.com/wp-content/uploads/2020/02/personal-development-1.jpg',
+                    );
+                  }),
+
+                  Obx(() {
+                    if (searchController.isLoadingResults.value) {
+                      return Center(child: CircularProgressIndicator(color: themeController.isDarkTheme.value ? Colors.black : Colors.white,));
+                    }
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: searchController.mapResults.map((result) {
+                          final data = result['data']['issue'] ?? {};
+                          return ResultContainer(
+                            title: data['title'] ?? 'No title',
+                            path: result['data']['full_category_name'] ?? 'Unknown',
+                            description: data['description'] ?? 'No description',
+                            logoUrl: result['icon_url'] ?? '',
+                            type: result['type'] ?? 'Map',
+                            id: data['id'] ?? 0,
+                          );
+                        }).toList(),
                       ),
-                      AllResultContainer(
-                        title: "a dummy",
-                        description: "two..a dummy two..a dummy a dummy to..a dummy a dummy to..a dummytwo..a dummy two..a dummy a dummy to..a dummy a dummy to..a dummy",
-                        logoUrl:
-                        'https://themindfool.com/wp-content/uploads/2020/02/personal-development-1.jpg',
-                      )
-                    ]
-                    ),
-                  ),
-                  Center(
-                      child: Text(
-                    "Errors Content",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: themeController.isDarkTheme.value
-                          ? Colors.white
-                          : Colors.black,
-                    ),
-                  )),
-                  Center(
-                      child: Text(
-                    "Maps Content",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: themeController.isDarkTheme.value
-                          ? Colors.white
-                          : Colors.black,
-                    ),
-                  )),
-                  Center(
-                      child: Text(
-                    "Solutions Content",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: themeController.isDarkTheme.value
-                          ? Colors.white
-                          : Colors.black,
-                    ),
-                  )),
+                    );
+                  }),
+
+                  Obx(() {
+                    if (searchController.isLoadingResults.value) {
+                      return Center(child: CircularProgressIndicator(color: themeController.isDarkTheme.value ? Colors.black : Colors.white,));
+                    }
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: searchController.stepResults.map((result) {
+                          final data = result['data']['issue'] ?? {};
+                          return ResultContainer(
+                            title: data['title'] ?? 'No title',
+                            path: result['data']['full_category_name'] ?? 'Unknown',
+                            description: data['description'] ?? 'No description',
+                            logoUrl: result['icon_url'] ?? '',
+                            type: result['type'] ?? 'Step',
+                            id: data['id'] ?? 0,
+                          );
+                        }).toList(),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
+
           ],
         ),
       ),

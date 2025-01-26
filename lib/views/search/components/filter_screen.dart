@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:searchfield/searchfield.dart';
 import 'package:treenode/controllers/search/SearchController.dart';
 import 'package:treenode/controllers/utills/ThemeController.dart';
 
@@ -12,7 +11,10 @@ class FilterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double h = MediaQuery.of(context).size.height;
+    double h = MediaQuery
+        .of(context)
+        .size
+        .height;
 
     return Scaffold(
       appBar: AppBar(
@@ -30,15 +32,14 @@ class FilterScreen extends StatelessWidget {
           ),
         ),
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: themeController.isDarkTheme.value
-                ? const Color.fromRGBO(255, 250, 244, 1)
-                : const Color.fromRGBO(44, 45, 49, 1),
-          ),
           onPressed: () {
-            Navigator.pop(context);
+            Get.back();
           },
+          icon: Icon(
+            Icons.arrow_back_ios_sharp,
+            color: themeController.isDarkTheme.value ? Colors.white : Colors
+                .black,
+          ),
         ),
         actions: [
           Padding(
@@ -63,7 +64,6 @@ class FilterScreen extends StatelessWidget {
                 "Apply".tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: 'Sarbaz',
                   fontSize: h / 55,
                   color: themeController.isDarkTheme.value
                       ? const Color.fromRGBO(44, 45, 49, 1)
@@ -74,204 +74,233 @@ class FilterScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(h * 0.02),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // General Searching Section
-              Text(
-                "General Searching".tr,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                  fontSize: h / 40,
-                  color: themeController.isDarkTheme.value
-                      ? const Color.fromRGBO(255, 250, 244, 1)
-                      : const Color.fromRGBO(44, 45, 49, 1),
-                ),
-              ),
-              SizedBox(height: h * 0.02),
-              Obx(() => Row(
-                children: [
-                  Radio<String>(
-                    value: "Yes",
-                    groupValue: searchController.selectedCategory.value,
-                    activeColor: themeController.isDarkTheme.value
-                        ? Colors.white
-                        : Colors.black,
-                    onChanged: (value) {
-                      searchController.updateCategory(value!);
-                    },
+      body: Obx(() {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(h * 0.010, h * 0.02, h * 0.010, 0),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(height: h * 0.01),
+                Container(
+                  padding: EdgeInsets.fromLTRB(h * 0.02,0,h * 0.02,0),
+                  decoration: BoxDecoration(
+                    color: themeController.isDarkTheme.value
+                        ? const Color.fromRGBO(44, 45, 49, 1)
+                        : const Color.fromRGBO(255, 250, 244, 1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  Text(
-                    "Yes",
-                    style: TextStyle(
-                      color: themeController.isDarkTheme.value
-                          ? const Color.fromRGBO(255, 250, 244, 1)
-                          : const Color.fromRGBO(44, 45, 49, 1),
-                    ),
-                  ),
-                  Radio<String>(
-                    value: "No",
-                    groupValue: searchController.selectedCategory.value,
-                    activeColor: themeController.isDarkTheme.value
-                        ? Colors.white
-                        : Colors.black,
-                    onChanged: (value) {
-                      searchController.updateCategory(value!);
-                    },
-                  ),
-                  Text(
-                    "No",
-                    style: TextStyle(
-                      color: themeController.isDarkTheme.value
-                          ? const Color.fromRGBO(255, 250, 244, 1)
-                          : const Color.fromRGBO(44, 45, 49, 1),
-                    ),
-                  ),
-                ],
-              )),
-              SizedBox(height: h * 0.02),
-              Text(
-                "Search Categories".tr,
-                style: TextStyle(
-                  fontSize: h / 40,
-                  color: themeController.isDarkTheme.value
-                      ? const Color.fromRGBO(255, 250, 244, 1)
-                      : const Color.fromRGBO(44, 45, 49, 1),
-                ),
-              ),
-              SizedBox(height: h * 0.02),
-              Obx(() {
-                return SearchField<String>(
-                  suggestions: searchController.filteredResults
-                      .map((e) => SearchFieldListItem<String>(e))
-                      .toList(),
-                  searchInputDecoration: SearchInputDecoration(
-                    hintText: 'Search categories...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  onSuggestionTap: (item) {
-                    searchController.selectCategory(item.searchKey);
-                    searchController.updateCategory(item.searchKey);
-                  },
-                );
-              }),
-              SizedBox(height: h * 0.02),
-              Obx(() {
-                if (searchController.selectedCategory.value.isNotEmpty) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    searchController.updateSubcategories();
-                  });
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Select Subcategory".tr,
-                        style: TextStyle(
-                          fontSize: h / 40,
-                          color: themeController.isDarkTheme.value
-                              ? const Color.fromRGBO(255, 250, 244, 1)
-                              : const Color.fromRGBO(44, 45, 49, 1),
+                  child: GestureDetector(
+                   onTap: () async {
+                     await searchController.fetchCategories();
+                   },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "General Searching",
+                          style: TextStyle(
+                            fontSize: h / 45,
+                            fontWeight: FontWeight.bold,
+                            color: themeController.isDarkTheme.value
+                                ? Colors.white
+                                : Colors.black,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: h * 0.02),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: searchController.subcategories.map((subcategory) {
-                          return GestureDetector(
-                            onTap: () {
-                              searchController.selectSubcategory(subcategory);
-                            },
-                            child: Container(
-                              margin: EdgeInsets.symmetric(vertical: h * 0.01),
-                              padding: EdgeInsets.symmetric(vertical: h * 0.015, horizontal: h * 0.02),
-                              decoration: BoxDecoration(
-                                color: searchController.allSelectedSubcategories.contains(subcategory)
-                                    ? Colors.blue
-                                    : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: searchController.allSelectedSubcategories.contains(subcategory)
-                                      ? Colors.blue
-                                      : Colors.grey[400]!,
-                                ),
-                              ),
-                              child: Text(
-                                subcategory,
-                                style: TextStyle(
-                                  fontSize: h / 45,
-                                  color: searchController.allSelectedSubcategories.contains(subcategory)
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: searchController.radioSelection.value == 'allYes',
+                              onChanged: (bool? value) {
+                                if (value ?? false) {
+                                  searchController.radioSelection.value = 'allYes';
+                                  searchController.selectAll(true);
+                                }
+                              },
+                              activeColor: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+                            ),
+                            Text(
+                              "Yes",
+                              style: TextStyle(
+                                fontSize: h / 50,
+                                color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
                               ),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  );
-                } else {
-                  return SizedBox();
-                }
-              }),
+                            Checkbox(
+                              value: searchController.radioSelection.value == 'allNo',
+                              onChanged: (bool? value) {
+                                if (value ?? false) {
+                                  searchController.radioSelection.value = 'allNo';
+                                  searchController.selectAll(false);
+                                }
+                              },
+                              activeColor: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+                            ),
+                            Text(
+                              "No",
+                              style: TextStyle(
+                                fontSize: h / 50,
+                                color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
 
-              SizedBox(height: h * 0.02),
-              Text(
-                "Selected Filters".tr,
-                style: TextStyle(
-                  fontSize: h / 40,
-                  color: themeController.isDarkTheme.value
-                      ? const Color.fromRGBO(255, 250, 244, 1)
-                      : const Color.fromRGBO(44, 45, 49, 1),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              SizedBox(height: h * 0.02),
-              Obx(() {
-                return Wrap(
-                  spacing: 8.0,
-                  runSpacing: 4.0,
-                  children: searchController.selectedCategories.map((category) {
-                    return Chip(
-                      label: Text(category),
-                      backgroundColor: Colors.blue[100],
-                      deleteIcon: Icon(Icons.close),
-                      onDeleted: () {
-                        searchController.removeSelectedCategory(category);
-                      },
+                if (searchController.isLoadingCategories.value)
+                  Center(
+                    child: CircularProgressIndicator(
+                      color: themeController.isDarkTheme.value
+                          ? Colors.white
+                          : Colors.black,
+                    ),
+                  )
+                else
+                  ...searchController.categories.map((category) {
+                    int? categoryId = category['id'] as int?;
+                    if (categoryId == null) return SizedBox.shrink();
+
+                    bool isExpanded = searchController.expandedCategories.contains(categoryId);
+
+                    if (isExpanded &&
+                        !searchController.subcategoriesByCategory.containsKey(categoryId)) {
+                      searchController.fetchSubcategories(categoryId);
+                    }
+
+                    List<Map<String, dynamic>> subcategories =
+                        searchController.subcategoriesByCategory[categoryId] ?? [];
+
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: h * 0.01),
+                      child: Container(
+                        padding: EdgeInsets.all(h * 0.02),
+                        decoration: BoxDecoration(
+                          color: themeController.isDarkTheme.value
+                              ? const Color.fromRGBO(44, 45, 49, 1)
+                              : const Color.fromRGBO(255, 250, 244, 1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Checkbox(
+                                      value: searchController.isCategorySelected(
+                                        category['id'].toString(),
+                                      ),
+                                      onChanged: (bool? value) {
+                                        searchController.toggleCategorySelection(
+                                          category['id'].toString(),
+                                          value ?? false,
+                                        );
+                                        for (var subcategory in subcategories) {
+                                          searchController.toggleSubcategorySelection(
+                                            subcategory['id'].toString(),
+                                            value ?? false,
+                                          );
+                                        }
+                                      },
+                                      activeColor: themeController.isDarkTheme.value
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+
+                                    Text(
+                                      searchController.decodeUnicode(
+                                          category['text'] ?? 'Unnamed Category'),
+                                      style: TextStyle(
+                                        fontSize: h / 50,
+                                        color: themeController.isDarkTheme.value
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    searchController.toggleCategoryExpansion(categoryId);
+                                  },
+                                  icon: Icon(
+                                    isExpanded
+                                        ? Icons.arrow_drop_up
+                                        : Icons.arrow_drop_down,
+                                    color: themeController.isDarkTheme.value
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (isExpanded)
+                              if (subcategories.isEmpty)
+                                Center(
+                                  child: Text(
+                                    "No subcategories available",
+                                    style: TextStyle(
+                                      fontSize: h / 55,
+                                      color: themeController.isDarkTheme.value
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                  ),
+                                )
+                              else
+                                Padding(
+                                  padding:  EdgeInsets.only(right: h*0.025,left: h*0.025),
+                                  child: Column(
+                                    children: subcategories.map((subcategory) {
+                                      int? subcategoryId = subcategory['id'] as int?;
+                                      if (subcategoryId == null) return SizedBox.shrink();
+
+                                      return Row(
+                                        children: [
+                                          Checkbox(
+                                            value: searchController.isSubcategorySelected(
+                                                subcategory['id'].toString()),
+                                            onChanged: (bool? value) {
+                                              searchController.toggleSubcategorySelection(
+                                                subcategory['id'].toString(),
+                                                value ?? false,
+                                              );
+                                            },
+                                            activeColor: themeController.isDarkTheme.value
+                                                ? Colors.white
+                                                : Colors.black,
+                                          ),
+                                          Text(
+                                            searchController.decodeUnicode(
+                                                subcategory['name'] ?? 'Unnamed Subcategory'),
+                                            style: TextStyle(
+                                              fontSize: h / 50,
+                                              color: themeController.isDarkTheme.value
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                          ],
+                        ),
+                      ),
                     );
                   }).toList(),
-                );
-              }),
-
-              Divider(color: Colors.black),
-
-              Obx(() {
-                return Wrap(
-                  spacing: 8.0,
-                  runSpacing: 4.0,
-                  children: searchController.allSelectedSubcategories.map((subcategory) {
-                    return Chip(
-                      label: Text(subcategory),
-                      backgroundColor: Colors.blue[100],
-                      deleteIcon: Icon(Icons.close),
-                      onDeleted: () {
-                        searchController.removeSelectedSubcategory(subcategory);
-                      },
-                    );
-                  }).toList(),
-                );
-              }),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      }),
+
+
     );
   }
 }
+

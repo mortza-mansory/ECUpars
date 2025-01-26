@@ -64,7 +64,7 @@ class AnimatedNavigationBar extends StatelessWidget {
                     Icon(
                       navigationItems[index]['icon'],
                       color: isSelected ? Colors.white : Colors.grey,
-                      size: isSelected ? 28 : 24, // Slightly smaller for unselected
+                      size: isSelected ? 28 : 24,
                     ),
                     if (isSelected)
                       Expanded(
@@ -80,7 +80,7 @@ class AnimatedNavigationBar extends StatelessWidget {
                                     fontSize: fontSize,
                                     fontFamily: "Sarbaz",
                                   ),
-                                  overflow: TextOverflow.ellipsis, // Prevent overflow
+                                  overflow: TextOverflow.ellipsis,
                                 )
                                     .animate()
                                     .fadeIn(duration: 300.ms),

@@ -82,6 +82,8 @@ class IssueController extends GetxController {
     }
   }
 
+  int snackbarCounter = 0;
+
   Future<void> fetchStepDetails(int stepId) async {
     isStepLoading.value = true;
     try {
@@ -127,14 +129,18 @@ class IssueController extends GetxController {
 
     } catch (e) {
       print("Error loading step details: $e");
-      Get.snackbar(
-        "Error".tr,
-        "$e",
-        snackPosition: SnackPosition.BOTTOM,
-        isDismissible: true,
-        duration: Duration(seconds: 20),
-        backgroundColor: Colors.redAccent.withOpacity(0.4),
-      );
+
+      if (snackbarCounter < 3) {
+        Get.snackbar(
+          "Error".tr,
+          "$e",
+          snackPosition: SnackPosition.BOTTOM,
+          isDismissible: true,
+          duration: Duration(seconds: 1),
+          backgroundColor: Colors.redAccent.withOpacity(0.4),
+        );
+        snackbarCounter++;
+      }
     } finally {
       isStepLoading.value = false;
     }

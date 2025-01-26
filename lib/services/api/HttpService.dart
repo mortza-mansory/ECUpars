@@ -155,7 +155,8 @@ class HttpService {
     }
 
     if (accessTokenExpiry == null) {
-      print("Access token expiry date is not set. Token is considered expired.");
+      print(
+          "Access token expiry date is not set. Token is considered expired.");
       return true;
     }
 
@@ -196,14 +197,15 @@ class HttpService {
   }
 
   //-----------------for sub category------------------------------------------------------------------------------------------------------------------------------------------------------------
-  Future<Map<String, dynamic>> fetchCategoryDetails(
-      int categoryId, bool includeIssues, bool includeRelatedCategories) async {
+  Future<Map<String, dynamic>> fetchCategoryDetails(int categoryId,
+      bool includeIssues, bool includeRelatedCategories) async {
     String? accessToken = _storage.read('access_token');
     if (accessToken == null || accessToken.isEmpty) {
       throw Exception("No access token is here...");
     }
     String url =
-        '${Endpoint.httpAddress}/api/v1/cars/$categoryId/?include_issues=$includeIssues&include_related_categories=$includeRelatedCategories';
+        '${Endpoint
+        .httpAddress}/api/v1/cars/$categoryId/?include_issues=$includeIssues&include_related_categories=$includeRelatedCategories';
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -253,6 +255,7 @@ class HttpService {
       throw Exception("E.fetching issue details ...: $e");
     }
   }
+
   //----------------------------------for Steps--------------------------------------------------------------------------------------------------------------------------------------
   Future<Map<String, dynamic>> fetchStepDetail(int stepId) async {
     String? accessToken = _storage.read('access_token');
@@ -285,7 +288,6 @@ class HttpService {
 
   //----------------------------------for ads---------------------------------------------------------------------------------------------------------------------------------------
   Future<List<Map<String, dynamic>>> fetchAds() async {
-
     if (await isAccessTokenExpired()) {
       print("Access token expired. Cannot fetch PNG assets.");
       Get.offAndToNamed('/start');
@@ -303,16 +305,17 @@ class HttpService {
       _logResponse("GET", url, response);
       if (response.statusCode == 200) {
         return List<Map<String, dynamic>>.from(jsonDecode(response.body));
-      } else if(response.statusCode == 401) {
+      } else if (response.statusCode == 401) {
         print("E. Error is about login again.");
         throw Exception("Error fetching the ads: ${response.statusCode}");
-      }else{
+      } else {
         throw Exception("Error fetching the ads: ${response.statusCode}");
       }
     } catch (e) {
       throw Exception("Error fetching Ads...: $e");
     }
   }
+
 //-----------------------------------------------------------------Section for caching...--------------------------------------------------------------------------------------------
   Future<List<Map<String, dynamic>>> fetchPngAssets() async {
     String? accessToken = _storage.read('access_token');
@@ -340,7 +343,8 @@ class HttpService {
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
         final cars = jsonData['cars'] as List;
-        print("PNG assets fetched successfully. Number of cars: ${cars.length}");
+        print(
+            "PNG assets fetched successfully. Number of cars: ${cars.length}");
 
         List<Map<String, dynamic>> pngAssets = [];
 
@@ -364,7 +368,8 @@ class HttpService {
         print("Unauthorized: Please check the access token.");
         throw Exception("Unauthorized: Access token is invalid or expired.");
       } else {
-        print("Failed to fetch PNG assets, status code: ${response.statusCode}");
+        print(
+            "Failed to fetch PNG assets, status code: ${response.statusCode}");
       }
     } catch (e) {
       print("Error while fetching PNG assets: $e");
@@ -387,7 +392,10 @@ class HttpService {
           dir.createSync(recursive: true);
         }
 
-        final fileName = Uri.parse(url).pathSegments.last;
+        final fileName = Uri
+            .parse(url)
+            .pathSegments
+            .last;
         final filePath = '${dir.path}/$fileName';
 
         final file = File(filePath);
@@ -404,10 +412,86 @@ class HttpService {
     return null;
   }
 
+  //-----------------------------------Searching Section-----------------------------------------------------------------------
+  Future<List<Map<String, dynamic>>> fetchSearchResults({
+    required String query,
+    required List<String> filterOptions, // Must only include strings like 'issues', 'solutions', 'cars', etc.
+    List<int>? categoryIds, // Multiple category IDs
+    int? subcategoryId, // Single subcategory ID
+  }) async {
+    String? accessToken = _storage.read('access_token');
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception("No access token is available");
+    }
+
+    // Validate that filterOptions contain only allowed string values
+    if (filterOptions.isEmpty) {
+      throw Exception("Filter options must include at least one value.");
+    }
+
+    // Construct query parameters
+    String filterParams = filterOptions.map((f) => 'filter_option=$f').join('&');
+    String categoryParams = categoryIds != null && categoryIds.isNotEmpty
+        ? categoryIds.map((id) => 'category_id=$id').join('&')
+        : '';
+    String subcategoryParam =
+    subcategoryId != null ? '&subcategory_id=$subcategoryId' : '';
+
+    // Combine into final URL
+    String url =
+        '${Endpoint.httpAddress}/api/v1/search/?query=$query&$filterParams&$categoryParams$subcategoryParam';
+
+    // Clean up trailing "&" if needed
+    url = url.endsWith('&') ? url.substring(0, url.length - 1) : url;
+
+    try {
+      print("Sending request to URL: $url");
+      print(
+          "Using headers: {'Authorization': 'Bearer <hidden>', 'Content-Type': 'application/json'}");
+      print("Request parameters:");
+      print("- Query: $query");
+      print("- Filter Options: $filterOptions");
+      if (categoryIds != null) print("- Category IDs: $categoryIds");
+      if (subcategoryId != null) print("- Subcategory ID: $subcategoryId");
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+
+        // Ensure 'results' is a valid list
+        if (data['results'] is List) {
+          print("Fetched ${data['results'].length} results.");
+          return List<Map<String, dynamic>>.from(data['results']);
+        } else {
+          print(
+              "Unexpected response format: 'results' key not found or not a list.");
+          throw Exception("Unexpected response format.");
+        }
+      } else {
+        // Server returned an error; log details
+        print("Server returned an error: ${response.statusCode}");
+        print("Error response body: ${response.body}");
+        throw Exception(
+            "Failed to fetch search results: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error during search: $e");
+      throw Exception("Error during search: $e");
+    }
+  }
+
+
 }
-
-
-
 /*
   Future<List<Map<String, dynamic>>> fetchPngAssets() async {
     String? accessToken = _storage.read('access_token');

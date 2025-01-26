@@ -6,6 +6,7 @@ import 'package:treenode/controllers/utills/ThemeController.dart';
 import 'package:treenode/views/treeView/IssusScreen.dart';
 
 final categoryController = Get.find<CategoryController>();
+
 Widget IssusContainer(
     double w,
     double h,
@@ -17,17 +18,15 @@ Widget IssusContainer(
     }) {
   return Container(
     width: w * 0.9,
-    height: h * 0.15,
     margin: EdgeInsets.only(bottom: h * 0.02),
     decoration: BoxDecoration(
       color: Colors.grey.shade600.withOpacity(0.7),
       borderRadius: BorderRadius.circular(24),
     ),
     child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Centered title text
+        SizedBox(height: h * 0.02),
         Text(
           title,
           style: TextStyle(
@@ -36,9 +35,11 @@ Widget IssusContainer(
             color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
           ),
           textAlign: TextAlign.center,
+          softWrap: true,
+          overflow: TextOverflow.visible,
         ),
+
         SizedBox(height: h * 0.02),
-        // Centered button with fixed dimensions
         SizedBox(
           width: w * 0.3,
           height: h * 0.06,
@@ -73,6 +74,8 @@ Widget IssusContainer(
             ),
           ),
         ),
+
+        SizedBox(height: h * 0.02),
       ],
     ),
   );
