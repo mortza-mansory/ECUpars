@@ -23,7 +23,6 @@ class ApiAds extends GetxController {
       }
       GatheredAds.value = data;
     } catch (e) {
-      print("Error loading Ads: $e");
     }
   }
 

@@ -34,14 +34,14 @@ class ConnectionController extends GetxController {
       snackbarTimer?.cancel();
       snackbarTimer = Timer.periodic(Duration(seconds: 30), (timer) {
         if (!isConnected.value) {
-          Get.snackbar(
+/*          Get.snackbar(
             'No Internet Connection'.tr,
             'Please check your connection and try again.'.tr,
             snackPosition: SnackPosition.TOP,
             backgroundColor: Colors.red,
             duration: Duration(seconds: 20),
             colorText: Colors.white,
-          );
+          );*/
         }
       });
     } else {

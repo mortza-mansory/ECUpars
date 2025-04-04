@@ -39,6 +39,8 @@ class LoginScreen extends StatelessWidget {
                   children: [
                     IconButton(
                         onPressed: () {
+                          usernameController.clear();
+                          passwordController.clear();
                           Get.toNamed("/start");
                         },
                         icon: Icon(Icons.arrow_back_ios)),
@@ -159,7 +161,7 @@ class LoginScreen extends StatelessWidget {
               SizedBox(height: 50),
               Obx(() => ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  fixedSize: Size(n-10, 60),
+                  fixedSize: Size(n - 10, 60),
                   elevation: 7,
                   shadowColor: Colors.black,
                   backgroundColor: loginController.isFormValid()
@@ -169,8 +171,9 @@ class LoginScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(40),
                   ),
                 ),
-                onPressed: loginController.isFormValid()
+                onPressed: loginController.isFormValid() && !loginController.isLoading.value
                     ? () async {
+                  loginController.isLoading.value = true;
                   await loginController.login(
                     usernameController.text,
                     passwordController.text,
@@ -180,27 +183,41 @@ class LoginScreen extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      loginController.isLoading.value
+                          ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: themeController.isDarkTheme.value
+                              ? Colors.white
+                              : Colors.black,
+                          strokeWidth: 3,
+                        ),
+                      )
+                          : Icon(
                         Icons.login_rounded,
                         color: Colors.black,
                       ),
-                      SizedBox(width: r),
-                      Expanded(
-                        child: Text(
-                          "Login".tr,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontFamily: 'Sarbaz',
-                            fontSize: 20,
+                      if (!loginController.isLoading.value) SizedBox(width: r),
+                      if (!loginController.isLoading.value)
+                        Expanded(
+                          child: Text(
+                            "Login".tr,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontFamily: 'Sarbaz',
+                              fontSize: 20,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
-              )),
+              ))
+
             ],
           ),
         ),

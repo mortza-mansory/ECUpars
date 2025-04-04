@@ -1,197 +1,148 @@
-// import 'package:get/get.dart';
-// import 'package:treenode/services/api/HttpService.dart';
-// import 'package:treenode/services/com.dart';
-// import 'package:treenode/views/treeView/CategoryScreen.dart';
-//
-// class CategoryController extends GetxController {
-//   var category = <String, dynamic>{}.obs;
-//   var relatedCategories = <dynamic>[].obs;
-//   var issues = <dynamic>[].obs;
-//
-//   final HttpService httpService = HttpService();
-//   final Com com = Com(httpService: HttpService());
-//
-//   final Map<int, Map<String, dynamic>> categoryCache = {};
-//   final Map<int, List<dynamic>> relatedCategoriesCache = {};
-//   final Map<int, List<dynamic>> issuesCache = {};
-//
-//   final List<int> navigationStack = [];
-//
-//   int? rootCategoryId;
-//
-//
-//   Future<bool> loadCategoryDetails(int categoryId, {bool forceRefresh = false}) async {
-//     if (!forceRefresh && categoryCache.containsKey(categoryId)) {
-//       category.assignAll(categoryCache[categoryId] ?? <String, dynamic>{});
-//       relatedCategories.assignAll(relatedCategoriesCache[categoryId] ?? <dynamic>[]);
-//       issues.assignAll(issuesCache[categoryId] ?? <dynamic>[]);
-//       return true;
-//     }
-//
-//     try {
-//       final Map<dynamic, dynamic> data = await httpService.fetchCategoryDetails(categoryId, true, true);
-//
-//       final Map<String, dynamic> fetchedCategory =
-//       (data['category'] as Map<dynamic, dynamic>).cast<String, dynamic>();
-//       final List<dynamic> fetchedRelatedCategories =
-//       List<dynamic>.from(data['related_categories'] ?? []);
-//       final List<dynamic> fetchedIssues =
-//       List<dynamic>.from(data['issues'] ?? []);
-//
-//       category.assignAll(fetchedCategory);
-//       relatedCategories.assignAll(fetchedRelatedCategories);
-//       issues.assignAll(fetchedIssues);
-//
-//       categoryCache[categoryId] = fetchedCategory;
-//       relatedCategoriesCache[categoryId] = fetchedRelatedCategories;
-//       issuesCache[categoryId] = fetchedIssues;
-//
-//       if (fetchedCategory['parent_category'] == null) {
-//         rootCategoryId = categoryId;
-//
-//         if (navigationStack.isEmpty || navigationStack.first != categoryId) {
-//           navigationStack.clear();
-//           navigationStack.add(categoryId);
-//           print("Navigation Stack Initialized: $navigationStack");
-//         }
-//       }
-//
-//       return true;
-//     } catch (e) {
-//       print("Error loading category details: $e");
-//       return false;
-//     }
-//   }
-//
-//   void navigateToCategoryDetails(int categoryId, {bool isRoute = false}) {
-//     if (isRoute) {
-//       rootCategoryId = categoryId;
-//     } else {
-//       if (navigationStack.isEmpty || navigationStack.last != categoryId) {
-//         navigationStack.add(categoryId);
-//       }
-//     }
-//
-//     loadCategoryDetails(categoryId).then((success) {
-//       if (success) {
-//         Get.to(() => CategoryScreen(categoryId: categoryId, isRoot: rootCategoryId == categoryId));
-//       } else {
-//         // Get.snackbar(
-//         //   "Error".tr,
-//         //   "Failed to load category details.".tr,
-//         //   snackPosition: SnackPosition.BOTTOM,
-//         // );
-//         print("Falid to load category details..this setup is still wokring on..");
-//
-//       }
-//     });
-//   }
-//
-//   void navigateBack() {
-//     if (navigationStack.isNotEmpty) {
-//       navigationStack.removeLast();
-//       if (navigationStack.isNotEmpty) {
-//         final previousCategoryId = navigationStack.last;
-//         loadCategoryDetails(previousCategoryId).then((success) {
-//           if (success) {
-//             Get.off(() => CategoryScreen(categoryId: previousCategoryId, isRoot: false));
-//           } else {
-//             // Get.snackbar(
-//             //   "Error".tr,
-//             //   "Failed to load previous category.".tr,
-//             //   snackPosition: SnackPosition.BOTTOM,
-//             // );
-//             print("faild to load previou one cus w e still working on them");
-//           }
-//         });
-//       } else {
-//         Get.back();
-//       }
-//     }
-//   }
-// }
-
 import 'dart:convert';
 import 'package:get/get.dart';
+
 import 'package:treenode/services/api/HttpService.dart';
 import 'package:treenode/services/com.dart';
+import 'package:treenode/views/home/homeScreen.dart';
 import 'package:treenode/views/treeView/CategoryScreen.dart';
+import 'package:treenode/viewModel/NodeTree.dart';
 
 class CategoryController extends GetxController {
   var category = <String, dynamic>{}.obs;
   var relatedCategories = <dynamic>[].obs;
   var issues = <dynamic>[].obs;
+  var articles = <dynamic>[].obs;
+  var maps = <dynamic>[].obs;
 
-  final HttpService httpService = HttpService();
+  final HttpService httpService = Get.put(HttpService());
   final Com com = Com(httpService: HttpService());
 
   final Map<int, Map<String, dynamic>> categoryCache = {};
   final Map<int, List<dynamic>> relatedCategoriesCache = {};
   final Map<int, List<dynamic>> issuesCache = {};
+  final Map<int, List<dynamic>> articlesCache = {};
 
-  final List<int> navigationStack = [];
+  final Map<int, List<dynamic>> mapsCache = {};
   int? rootCategoryId;
+  var isLoading = false.obs;
+
 
   Future<bool> loadCategoryDetails(int categoryId, {bool forceRefresh = false}) async {
+    isLoading.value = true;
+    category.clear();
+    relatedCategories.clear();
+    issues.clear();
+    articles.clear();
+    maps.clear();
+
     if (!forceRefresh && categoryCache.containsKey(categoryId)) {
+      await Future.delayed(Duration(milliseconds: 200));
       category.assignAll(categoryCache[categoryId] ?? <String, dynamic>{});
       relatedCategories.assignAll(relatedCategoriesCache[categoryId] ?? <dynamic>[]);
       issues.assignAll(issuesCache[categoryId] ?? <dynamic>[]);
+      articles.assignAll(articlesCache[categoryId] ?? <dynamic>[]);
+      maps.assignAll(mapsCache[categoryId] ?? <dynamic>[]);
+
+      isLoading.value = false;
       return true;
     }
 
     try {
-      final Map<dynamic, dynamic> data = await httpService.fetchCategoryDetails(
-        categoryId,
-        true,
-        true,
-      );
+      final Map<dynamic, dynamic> data = await httpService.fetchCategoryDetails(categoryId, true, true);
 
       final Map<String, dynamic> fetchedCategory =
       _decodeUtf8((data['category'] as Map<dynamic, dynamic>).cast<String, dynamic>());
       final List<dynamic> fetchedRelatedCategories = List<dynamic>.from(
-        (data['related_categories'] ?? []).map((category) {
-          final decodedCategory = (category as Map<dynamic, dynamic>).cast<String, dynamic>();
-          return _decodeUtf8(decodedCategory);
+        (data['related_categories'] ?? []).map((cat) {
+          final decoded = (cat as Map<dynamic, dynamic>).cast<String, dynamic>();
+          return _decodeUtf8(decoded);
         }),
       );
       final List<dynamic> fetchedIssues = List<dynamic>.from(
         (data['issues'] ?? []).map((issue) {
-          final decodedIssue = (issue as Map<dynamic, dynamic>).cast<String, dynamic>();
-          return _decodeUtf8(decodedIssue);
+          final decoded = (issue as Map<dynamic, dynamic>).cast<String, dynamic>();
+          return _decodeUtf8(decoded);
+        }),
+      );
+      final List<dynamic> fetchedArticles = List<dynamic>.from(
+        (data['articles'] ?? []).map((article) {
+          final decoded = (article as Map<dynamic, dynamic>).cast<String, dynamic>();
+          return _decodeUtf8(decoded);
+        }),
+      );
+      final List<dynamic> fetchedMaps = List<dynamic>.from(
+        (data['maps'] ?? []).map((map) {
+          final decoded = (map as Map<dynamic, dynamic>).cast<String, dynamic>();
+          return _decodeUtf8(decoded);
         }),
       );
 
       category.assignAll(fetchedCategory);
       relatedCategories.assignAll(fetchedRelatedCategories);
       issues.assignAll(fetchedIssues);
+      articles.assignAll(fetchedArticles);
+      maps.assignAll(fetchedMaps);
 
       categoryCache[categoryId] = fetchedCategory;
       relatedCategoriesCache[categoryId] = fetchedRelatedCategories;
       issuesCache[categoryId] = fetchedIssues;
+      articlesCache[categoryId] = fetchedArticles;
+      mapsCache[categoryId] = fetchedMaps;
 
       if (fetchedCategory['parent_category'] == null) {
         rootCategoryId = categoryId;
-
-        if (navigationStack.isEmpty || navigationStack.first != categoryId) {
-          navigationStack.clear();
-          navigationStack.add(categoryId);
-          print("Navigation Stack Initialized: $navigationStack");
-        }
       }
 
+      isLoading.value = false;
       return true;
     } catch (e) {
-      final errorMessage = e.toString();
-      if (errorMessage.contains('401')) {
-        Get.snackbar(
-          "Unauthorized".tr,
-          "Your session has expired. Please log in again.".tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+      isLoading.value = false;
+      if (e.toString().contains("403")) {
+        String? errorMessage;
+        try {
+          final bodyMatch = RegExp(r'- ({.*})').firstMatch(e.toString());
+          final responseBody = bodyMatch?.group(1);
+          if (responseBody != null) {
+            final decodedJson = jsonDecode(responseBody);
+            errorMessage = utf8.decode(decodedJson["detail"].toString().codeUnits, allowMalformed: true);
+          } else {
+            errorMessage = "خطا در دریافت پیام سرور";
+          }
+        } catch (decodeError) {
+          errorMessage = "خطا در پردازش پاسخ سرور";
+        }
+
+        if (errorMessage != null) {
+          if (errorMessage.contains("شما با این دستگاه دسترسی ندارید")) {
+            Get.snackbar(
+              "دسترسی محدود".tr,
+              "شما با این دستگاه دسترسی ندارید.".tr,
+              snackPosition: SnackPosition.TOP,
+              duration: Duration(seconds: 5),
+            );
+          } else if (errorMessage.contains("این شماره در حال حاضر روی دستگاه دیگری فعال است")) {
+            Get.snackbar(
+              "دسترسی محدود".tr,
+              "این شماره در حال حاضر روی دستگاه دیگری فعال است. لطفاً برای راهنمایی بیشتر با پشتیبانی تماس بگیرید.\n\n📌 پشتیبانی:\n🔹 تلگرام و اینستاگرام: @ecupars",
+              snackPosition: SnackPosition.TOP,
+              duration: Duration(seconds: 5),
+            );
+          } else {
+            Get.snackbar(
+              "دسترسی محدود".tr,
+              "برای دسترسی به این بخش، لطفاً سطح کاربری خود را ارتقا دهید.".tr,
+              snackPosition: SnackPosition.TOP,
+            );
+          }
+        }
       } else {
-        print("Error loading category details: $errorMessage");
+        Get.snackbar(
+          "خطا".tr,
+          "مشکلی در بارگیری اطلاعات رخ داده است. لطفاً دوباره تلاش کنید.".tr,
+          snackPosition: SnackPosition.TOP,
+        );
       }
+
       return false;
     }
   }
@@ -208,12 +159,14 @@ class CategoryController extends GetxController {
 
   void navigateToCategoryDetails(int categoryId, {bool isRoute = false}) {
     if (isRoute) {
+      globalNavigationStack.clear();
       rootCategoryId = categoryId;
-      navigationStack.clear();
-    } else {
-      if (navigationStack.isEmpty || navigationStack.last != categoryId) {
-        navigationStack.add(categoryId);
-      }
+      globalNavigationStack.add(NavigationNode(type: NodeType.category, id: categoryId));
+    }
+    if (globalNavigationStack.isEmpty ||
+        globalNavigationStack.last.type != NodeType.category ||
+        globalNavigationStack.last.id != categoryId) {
+      globalNavigationStack.add(NavigationNode(type: NodeType.category, id: categoryId));
     }
 
     loadCategoryDetails(categoryId).then((success) {
@@ -223,28 +176,29 @@ class CategoryController extends GetxController {
           isRoot: rootCategoryId == categoryId,
         ));
       } else {
-        print("Failed to load category details.");
       }
     });
   }
 
-
   void navigateBack() {
-    if (navigationStack.length > 1) {
-      navigationStack.removeLast();
-      final previousCategoryId = navigationStack.last;
-      loadCategoryDetails(previousCategoryId).then((success) {
-        if (success) {
-          Get.off(() => CategoryScreen(
-            categoryId: previousCategoryId,
-            isRoot: rootCategoryId == previousCategoryId,
-          ));
-        } else {
-          print("Failed to load previous category.");
-        }
-      });
-    } else if (navigationStack.length == 1) {
-      Get.back();
+    if (globalNavigationStack.length > 1) {
+      globalNavigationStack.removeLast();
+      final previousNode = globalNavigationStack.last;
+      if (previousNode.type == NodeType.category) {
+        loadCategoryDetails(previousNode.id).then((success) {
+          if (success) {
+            Get.off(() => CategoryScreen(
+              categoryId: previousNode.id,
+              isRoot: rootCategoryId == previousNode.id,
+            ));
+          } else {
+          }
+        });
+      } else {
+        Get.back();
+      }
+    } else if (globalNavigationStack.length == 1) {
+      Get.off(()=> Homescreen());
     }
   }
 }

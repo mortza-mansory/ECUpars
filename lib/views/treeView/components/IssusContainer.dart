@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:treenode/controllers/api/ApiCategory.dart';
+import 'package:treenode/controllers/api/ApiIssus.dart';
+import 'package:treenode/controllers/saved/SavedController.dart';
 import 'package:treenode/controllers/utills/LangController.dart';
 import 'package:treenode/controllers/utills/ThemeController.dart';
+import 'package:treenode/viewModel/NodeTree.dart';
 import 'package:treenode/views/treeView/IssusScreen.dart';
 
 final categoryController = Get.find<CategoryController>();
@@ -16,6 +19,8 @@ Widget IssusContainer(
       required String date,
       required int categoryId,
     }) {
+  final issueController = Get.find<IssueController>();
+
   return Container(
     width: w * 0.9,
     margin: EdgeInsets.only(bottom: h * 0.02),
@@ -38,7 +43,6 @@ Widget IssusContainer(
           softWrap: true,
           overflow: TextOverflow.visible,
         ),
-
         SizedBox(height: h * 0.02),
         SizedBox(
           width: w * 0.3,
@@ -46,14 +50,19 @@ Widget IssusContainer(
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               minimumSize: Size(w * 0.08, h * 0.06),
-              backgroundColor: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
+              foregroundColor: Colors.red,
+              splashFactory: InkRipple.splashFactory,
             ),
-            onPressed: () {
-              Get.to(() => Issusscreen(issueId: categoryId));
-            },
+            onPressed: () async {
+              await Future.delayed(const Duration(milliseconds: 450));
+            //  globalNavigationStack.clear();
+              //isRoute: true
+              Get.find<IssueController>().navigateToIssue(categoryId );
+              },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -62,19 +71,19 @@ Widget IssusContainer(
                   style: TextStyle(
                     fontFamily: "Sarbaz",
                     fontSize: w * 0.035,
-                    color: themeController.isDarkTheme.value ? Colors.black : Colors.white,
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(width: w * 0.02),
-                const Icon(
+                Icon(
                   Icons.arrow_forward,
+                  size: w * 0.045,
                   color: Colors.blueAccent,
                 ),
               ],
             ),
           ),
         ),
-
         SizedBox(height: h * 0.02),
       ],
     ),

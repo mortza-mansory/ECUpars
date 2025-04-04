@@ -11,6 +11,7 @@ class LangController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    changeLanguage('fa');
     selectedLanguage.value = _storage.read('selectedLanguage') ?? 'en';
     updateLocale(selectedLanguage.value);
   }

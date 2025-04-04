@@ -7,6 +7,7 @@ class AccessController extends GetxController {
   var isRedirecting = false.obs;
   void startRedirect() => isRedirecting.value = true;
   void endRedirect() => isRedirecting.value = false;
+
   Future<bool> isAccessTokenExpired() async {
     return await httpService.isAccessTokenExpired();
   }

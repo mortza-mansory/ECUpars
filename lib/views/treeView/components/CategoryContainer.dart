@@ -46,12 +46,15 @@ Widget CategoryContainer(
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               minimumSize: Size(w * 0.08, h * 0.06),
-              backgroundColor: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+              backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
+              foregroundColor: Colors.red,
+              splashFactory: InkSparkle.splashFactory,
             ),
-            onPressed: () {
+            onPressed: () async {
+              await Future.delayed(const Duration(milliseconds: 450));
               categoryController.navigateToCategoryDetails(categoryId);
             },
             child: Row(
@@ -62,11 +65,12 @@ Widget CategoryContainer(
                   style: TextStyle(
                     fontFamily: "Sarbaz",
                     fontSize: w * 0.035,
-                    color: themeController.isDarkTheme.value ? Colors.black : Colors.white,
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(width: w * 0.02),
-                const Icon(
+                Icon(
+                  size: w * 0.045,
                   Icons.arrow_forward,
                   color: Colors.blueAccent,
                 ),

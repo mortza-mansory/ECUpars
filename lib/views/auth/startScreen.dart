@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:treenode/controllers/auth/AccessController.dart';
 import 'package:treenode/controllers/auth/LoginController.dart';
 import 'package:treenode/views/auth/loginScreen.dart';
+import 'package:treenode/views/auth/signupScreen.dart';
 
 import '../../controllers/utills/LangController.dart';
 import '../../controllers/utills/ThemeController.dart';
@@ -12,29 +13,12 @@ class StartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final LangController langController = Get.find<LangController>();
     final ThemeController themeController = Get.find<ThemeController>();
-    final LoginController loginController = Get.find<LoginController>();
-    final AccessController accessController = Get.find<AccessController>();
-    bool logo = true;
 
     double a = MediaQuery.of(context).size.width;
     double n = 0.70 * a;
-
     double r = 0.02 * n;
-
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   if (!accessController.isRedirecting.value) {
-    //     accessController.startRedirect();
-    //     final isExpired = accessController.isAccessTokenExpiredSync();
-    //     if (!isExpired) {
-    //       Get.offAllNamed('/home');
-    //     } else {
-    //       accessController.endRedirect();
-    //     }
-    //   }
-    // });
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 80),
@@ -42,30 +26,68 @@ class StartScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
+            Obx(
+                  () => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                textDirection: TextDirection.ltr,
+                children: [
+                  IconButton(
                     onPressed: () {
                       themeController.toggleTheme();
                     },
                     icon: Icon(
-                        logo ? Icons.light_mode : Icons.nightlight_outlined)),
-                DropdownButton<String>(
-                  value: langController.selectedLanguage.value,
-                  onChanged: (String? value) {
-                    if (value != null) {
-                      langController.changeLanguage(value);
-                    }
-                  },
-                  items: [
-                    DropdownMenuItem(value: 'en', child: Text('English')),
-                    DropdownMenuItem(value: 'es', child: Text('Español')),
-                    DropdownMenuItem(value: 'fa', child: Text('فارسی')),
-                  ],
-                  underline: SizedBox.shrink(),
-                ),
-              ],
+                      themeController.isDarkTheme.value
+                          ? Icons.nightlight_outlined
+                          : Icons.light_mode,
+                      color: themeController.isDarkTheme.value
+                          ? Colors.white
+                          : Colors.black,
+                    ),
+                  ),
+                  DropdownButton<String>(
+                    value: langController.selectedLanguage.value,
+                    onChanged: (String? value) {
+                      if (value != null) {
+                        langController.changeLanguage(value);
+                      }
+                    },
+                    items: [
+                      DropdownMenuItem(
+                        value: 'en',
+                        child: Text(
+                          'English',
+                          style: TextStyle(
+                            color: themeController.isDarkTheme.value
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'fa',
+                        child: Text(
+                          'فارسی',
+                          style: TextStyle(
+                            color: themeController.isDarkTheme.value
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                    dropdownColor: themeController.isDarkTheme.value
+                        ? Colors.grey[900]
+                        : Colors.white,
+                    icon: Icon(
+                      Icons.arrow_drop_down,
+                      color: themeController.isDarkTheme.value
+                          ? Colors.white
+                          : Colors.black,
+                    ),
+                    underline: SizedBox.shrink(),
+                  ),
+                ],
+              ),
             ),
             SizedBox(
               height: 240,
@@ -73,6 +95,7 @@ class StartScreen extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                // Sign Up button
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     fixedSize: Size(n, 60),
@@ -84,9 +107,12 @@ class StartScreen extends StatelessWidget {
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
-                  onPressed: () {},
+                  onPressed: () async {
+                    await Future.delayed(Duration(milliseconds: 300));
+                   Get.to(() => SignUpScreen());
+                  },
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20,8,20,8),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
                     child: Row(
                       children: [
                         Icon(
@@ -112,6 +138,7 @@ class StartScreen extends StatelessWidget {
                 SizedBox(
                   height: 30,
                 ),
+                // Login button
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     fixedSize: Size(n, 60),
@@ -123,11 +150,12 @@ class StartScreen extends StatelessWidget {
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
+                    await Future.delayed(Duration(milliseconds: 300));
                     Get.to(() => LoginScreen());
                   },
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20,8,20,8),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
                     child: Row(
                       children: [
                         Icon(

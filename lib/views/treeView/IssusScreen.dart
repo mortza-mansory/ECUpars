@@ -1,114 +1,136 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:treenode/controllers/api/ApiCategory.dart';
 import 'package:treenode/controllers/api/ApiIssus.dart';
-import 'package:treenode/controllers/utills/LangController.dart';
+import 'package:treenode/controllers/saved/SavedController.dart';
 import 'package:treenode/controllers/utills/ThemeController.dart';
-import 'package:treenode/services/api/config/endpoint.dart';
+import 'package:treenode/viewModel/NodeTree.dart';
 import 'package:treenode/views/home/homeScreen.dart';
-import 'package:treenode/views/treeView/StepScreen.dart';
+import 'package:treenode/views/treeView/components/BoxCardsMap.dart';
 import 'package:treenode/views/treeView/components/BoxCardsQuastions.dart';
-import 'package:treenode/views/treeView/components/BoxCardsSteps.dart';
-import 'package:treenode/views/treeView/extention/TextExtention.dart';
-import 'package:treenode/views/treeView/extention/imgext.dart';
+import 'package:treenode/views/treeView/components/BoxCards.dart';
 
 class Issusscreen extends StatelessWidget {
   final int issueId;
 
-  Issusscreen({required this.issueId});
+  const Issusscreen({required this.issueId, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final issueController = Get.find<IssueController>();
     final themeController = Get.find<ThemeController>();
-    final langController = Get.find<LangController>();
+    final savedController = Get.find<SavedController>();
 
     double h = MediaQuery.of(context).size.height;
     double w = MediaQuery.of(context).size.width;
 
-    issueController.loadIssueDetails(issueId);
-
     return WillPopScope(
       onWillPop: () async {
-        // showConfirmationDialog(context);
-        //for false
+        issueController.navigateBack();
         return true;
       },
-      child: Scaffold(
+      child: Obx(() => Scaffold(
         appBar: AppBar(
           backgroundColor: themeController.isDarkTheme.value
               ? const Color.fromRGBO(44, 45, 49, 1)
-              : const Color.fromRGBO(255, 250, 244, 1),
+              : const Color.fromRGBO(255, 255, 255, 1.0),
           iconTheme: IconThemeData(
-            color:
-                themeController.isDarkTheme.value ? Colors.white : Colors.black,
+            color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
           ),
           elevation: 0,
           leading: IconButton(
-            onPressed: () => Get.back(),
+            onPressed: () => issueController.navigateBack(),
             icon: const Icon(Icons.arrow_back),
           ),
-          title: Obx(
-            () => Text(
-              issueController.issue['title'] ?? 'Issue Details',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: themeController.isDarkTheme.value
-                    ? Colors.white
-                    : Colors.black,
+          actions: [
+            IconButton(
+              onPressed: () => showConfirmationDialog(context, themeController),
+              icon: Icon(
+                Icons.home,
+                color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
               ),
             ),
-          ),
-          centerTitle: false,
+            IconButton(
+              onPressed: () => themeController.toggleTheme(),
+              icon: const Icon(Icons.light_mode),
+            ),
+            Obx(() {
+              final isSaved = savedController.isIssueSaved(issueId);
+              return IconButton(
+                onPressed: () {
+                  savedController.toggleSaveIssue(
+                    issueId,
+                    issueController.issue.value,
+                    issueController.question.value,
+                  );
+                },
+                icon: Icon(
+                  isSaved ? Icons.bookmark : Icons.bookmark_border,
+                  color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+                ),
+              );
+            }),
+          ],
         ),
-        body: Obx(() {
-          if (issueController.isLoading.value) {
-            return _buildLoadingScreen(themeController);
-          }
-          final issue = issueController.issue;
-          final question = issueController.question;
-          return SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: w * 0.06),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  BoxCards(
-                    title: issue['title'] ?? '',
-                    description: issue['description'] ?? '',
-                    h: h,
+        body: FutureBuilder<bool>(
+          future: issueController.loadIssueDetails(issueId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return _buildLoadingScreen(themeController);
+            } else if (snapshot.hasError || !snapshot.data!) {
+              return Center(
+                child: Text(
+                  'Error loading issue details'.tr,
+                  style: TextStyle(
+                    color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
                   ),
-                  SizedBox(height: h * 0.02),
-               //   _buildSectionHeader("Related Question", themeController, w),
-                  SizedBox(height: h * 0.02),
-                  if (question.isNotEmpty)
-                    BoxCardsQuastions(question, question['options'] ?? [],themeController,w)
-                  else
-                    Text("No related questions."),
-                ],
-              ),
-            ),
-          );
-        }),
-      ),
+                ),
+              );
+            } else {
+              final issue = issueController.issue;
+              final question = issueController.question;
+              return SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: w * 0.06),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BoxCards(
+                        title: issue['title'] ?? '',
+                        description: issue['description'] ?? '',
+                        h: h,
+                      ),
+                      SizedBox(height: h * 0.02),
+                      if (question != null &&
+                          question['text'] != null &&
+                          question['text'].isNotEmpty)
+                        SizedBox(height: h * 0.02),
+                      if (issue['map'] != null &&
+                          issue['map'] is Map &&
+                          issue['map']['title'] != null &&
+                          issue['map']['url'] != null)
+                        BoxCardsMap(step: issue, h: h),
+                      if (question != null &&
+                          question['options'] != null &&
+                          question['options'].isNotEmpty)
+                        BoxCardsQuastions(
+                          question,
+                          question['options'],
+                          themeController,
+                          w,
+                          h,
+                        ),
+                      SizedBox(height: h * 0.03),
+                    ],
+                  ),
+                ),
+              );
+            }
+          },
+        ),
+      )),
     );
   }
-
-  // Widget _buildSectionHeader(
-  //     String title, ThemeController themeController, double h) {
-  //   return Padding(
-  //     padding: EdgeInsets.only(top: h * 0.006, bottom: h * 0.003),
-  //     child: Text(
-  //       title,
-  //       style: TextStyle(
-  //         fontSize: 18,
-  //         fontWeight: FontWeight.bold,
-  //         color:
-  //             themeController.isDarkTheme.value ? Colors.white : Colors.black,
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget _buildLoadingScreen(ThemeController themeController) {
     return Center(
@@ -118,27 +140,48 @@ class Issusscreen extends StatelessWidget {
     );
   }
 
-
-
-  void showConfirmationDialog(BuildContext context) {
+  void showConfirmationDialog(BuildContext context, ThemeController themeController) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Are you sure?'.tr),
-          content: Text('Do you really want to go back to the home screen?'),
+          title: Text(
+            'Are you sure?'.tr,
+            style: TextStyle(
+              color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+            ),
+          ),
+          icon: const Icon(Icons.outbond_outlined, size: 40),
+          content: Text(
+            'Do you really want to go back to the home screen?'.tr,
+            style: TextStyle(
+              color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+            ),
+          ),
+          backgroundColor: themeController.isDarkTheme.value
+              ? const Color.fromRGBO(44, 45, 49, 1)
+              : Colors.white,
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel'.tr,
+                style: TextStyle(
+                  color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () {
+                globalNavigationStack.clear();
                 Get.offAll(() => Homescreen());
               },
-              child: Text('Yes'),
+              child: Text(
+                'Yes'.tr,
+                style: TextStyle(
+                  color: themeController.isDarkTheme.value ? Colors.white : Colors.black,
+                ),
+              ),
             ),
           ],
         );

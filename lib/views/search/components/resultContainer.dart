@@ -3,9 +3,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:get/get.dart';
+import 'package:treenode/controllers/api/ApiIssus.dart';
 import 'package:treenode/controllers/utills/ThemeController.dart';
+import 'package:treenode/viewModel/NodeTree.dart';
+import 'package:treenode/views/treeView/IssusScreen.dart';
+import 'package:treenode/views/treeView/MapScreen.dart';
+import 'package:treenode/views/treeView/StepScreen.dart';
+
+import '../../articles/articleSubScreen.dart';
 
 class ResultContainer extends StatelessWidget {
+  final Map<String, dynamic>? fulldata;
   final String title;
   final String path;
   final String description;
@@ -15,6 +23,7 @@ class ResultContainer extends StatelessWidget {
 
   const ResultContainer({
     super.key,
+    this.fulldata,
     required this.title,
     required this.path,
     required this.description,
@@ -40,8 +49,14 @@ class ResultContainer extends StatelessWidget {
     return decodedMap["key"];
   }
 
+  String removeHtmlTags(String htmlText) {
+    RegExp exp = RegExp(r"<[^>]*>", multiLine: true, caseSensitive: true);
+    return htmlText.replaceAll(exp, '');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final issueController = Get.find<IssueController>();
     double h = MediaQuery.of(context).size.height;
     double w = MediaQuery.of(context).size.width;
     final ThemeController themeController = Get.find<ThemeController>();
@@ -49,20 +64,34 @@ class ResultContainer extends StatelessWidget {
     final decodedTitle = decodeUnicode(title);
     final decodedDescription = decodeUnicode(description);
     final decodedPath = decodeUnicode(path);
+
+    final pathSegments = decodedPath.split('>').map((s) => s.trim()).toList();
+
     return GestureDetector(
       onTap: () {
-        if (type == 'Error') {
-          Get.toNamed('/errorDetail', arguments: {'id': id});
-        } else if (type == 'Step') {
-          Get.toNamed('/stepDetail', arguments: {'id': id});
-        } else if (type == 'Map') {
-          Get.toNamed('/mapDetail', arguments: {'id': id});
+        // Since full data is already the map data from SearchScreen,
+        // we can use it directly
+        // On the article results its also the same
+        // Actually the api sending me full data to show and i should make changes like this....
+        // Sorry new developer ...
+        globalNavigationStack.clear();
+        print(globalNavigationStack.length);
+        if (type == 'issue') {
+          globalNavigationStack.clear();
+          Get.to(() => Issusscreen(issueId: id));
+        } else if (type == 'solution') {
+          Get.to(() => StepScreen(stepId: id));
+        } else if (type == 'map' || type == 'tag') {
+          Map<String, dynamic> mapDataToPass = Map<String, dynamic>.from(fulldata!);
+          Get.to(() => MapScreen(mapData: mapDataToPass));
+        } else if (type == 'article') {
+          Get.to(() => ArticleSubScreen(article: fulldata!));
         }
       },
       child: Container(
         width: w * 0.98,
         margin: const EdgeInsets.symmetric(vertical: 4),
-        padding:  EdgeInsets.all(h*0.02),
+        padding: EdgeInsets.all(h * 0.02),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: themeController.isDarkTheme.value
@@ -83,13 +112,15 @@ class ResultContainer extends StatelessWidget {
                       Icon(Icons.broken_image, size: h * 0.02),
                 ),
                 SizedBox(width: h * 0.02),
-                SizedBox(width: h * 0.02),
                 Expanded(
                   child: AutoSizeText(
                     decodedTitle,
-                    style:  TextStyle(
-                      fontSize: h*0.02,
+                    style: TextStyle(
+                      fontSize: h * 0.02,
                       fontWeight: FontWeight.bold,
+                      color: themeController.isDarkTheme.value
+                          ? Colors.white
+                          : Colors.black,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -98,16 +129,35 @@ class ResultContainer extends StatelessWidget {
               ],
             ),
             SizedBox(height: h * 0.02),
-            Text(
-              decodedPath,
-              style: TextStyle(fontSize: h * 0.015),
-              textAlign: TextAlign.start,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: pathSegments.map((segment) {
+                return Text(
+                  segment + (pathSegments.last != segment ? ' >' : ''),
+                  style: TextStyle(
+                    fontSize: h * 0.015,
+                    color: themeController.isDarkTheme.value
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                  textAlign: TextAlign.right,
+                  textDirection: TextDirection.rtl,
+                );
+              }).toList(),
             ),
             SizedBox(height: h * 0.02),
             Text(
-              decodedDescription,
-              style: TextStyle(fontSize: h * 0.015),
-              textAlign: TextAlign.start,
+              removeHtmlTags(decodedDescription),
+              style: TextStyle(
+                fontSize: h * 0.015,
+                color: themeController.isDarkTheme.value
+                    ? Colors.white
+                    : Colors.black,
+              ),
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

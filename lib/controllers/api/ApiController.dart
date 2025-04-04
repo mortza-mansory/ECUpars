@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:treenode/controllers/errors/ErrorController.dart';
+import 'package:treenode/controllers/connection/ConnectionController.dart';
 import 'package:treenode/services/api/HttpService.dart';
 
 class ApiController extends GetxController {
@@ -12,18 +12,27 @@ class ApiController extends GetxController {
   var isLoading = false.obs;
   var errorMessage = ''.obs;
   var isCacheLoaded = false.obs;
-  final ErrorController _errorController = Get.find();
+  final ConnectionController _connectionController = Get.find();
 
   @override
   void onInit() {
     super.onInit();
-    if (isCacheLoaded.value && pngAssetsList.isNotEmpty) {
-      print("Cache loaded: $isCacheLoaded");
-      loadPngAssetsFromCache();
-    } else {
-      print("Cache not loaded or empty, fetching assets...");
-      fetchAndCachePngAssets();
-    }
+    Future.delayed(Duration.zero, () async {
+      await loadPngAssetsFromCache();
+    });
+  }
+
+  List<Map<String, dynamic>> _sortAssets(List<Map<String, dynamic>> assets) {
+    assets.sort((a, b) {
+      int orderA = a['order'] is int
+          ? a['order'] as int
+          : int.tryParse(a['order'].toString()) ?? 9999;
+      int orderB = b['order'] is int
+          ? b['order'] as int
+          : int.tryParse(b['order'].toString()) ?? 9999;
+      return orderA.compareTo(orderB);
+    });
+    return assets;
   }
 
   Future<void> loadPngAssetsFromCache() async {
@@ -32,72 +41,72 @@ class ApiController extends GetxController {
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/png_assets.json';
       final file = File(filePath);
-
       if (await file.exists()) {
         final content = await file.readAsString();
-
         if (content.isNotEmpty) {
           List<dynamic> cachedAssets = jsonDecode(content);
-          pngAssetsList.value = List<Map<String, dynamic>>.from(cachedAssets);
+          List<Map<String, dynamic>> assetsList =
+          List<Map<String, dynamic>>.from(cachedAssets);
+          assetsList = _sortAssets(assetsList);
+          pngAssetsList.assignAll(assetsList);
           isCacheLoaded.value = true;
-          print("Loaded PNG assets from cache");
-        } else {
-          await fetchAndCachePngAssets();
+          return;
         }
-      } else {
-        await fetchAndCachePngAssets();
       }
+      await fetchAndCachePngAssets();
     } catch (e) {
-      print("Error loading PNG assets from cache: $e");
-      _errorController.logError("Error loading PNG assets from cache: $e");
-   //   Future.delayed(Duration(seconds: 2));
-     // Get.("/start");
       await fetchAndCachePngAssets();
     }
   }
 
   Future<void> fetchAndCachePngAssets() async {
-    if (isLoading.value) return;
+    if (isLoading.value || isCacheLoaded.value) return;
+    isLoading.value = true;
     try {
-      isLoading.value = true;
-      errorMessage.value = "";
-
+      final startTime = DateTime.now();
       final assets = await _httpService.fetchPngAssets();
-
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/png_assets.json';
-      final file = File(filePath);
-      await file.writeAsString(jsonEncode(assets));
-      pngAssetsList.value = assets;
-      isCacheLoaded.value = true;
-      print("Fetched and cached PNG assets");
+      final duration = DateTime.now().difference(startTime);
+      if (assets.isNotEmpty) {
+        List<Map<String, dynamic>> mappedAssets =
+        List<Map<String, dynamic>>.from(assets);
+        mappedAssets = _sortAssets(mappedAssets);
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/png_assets.json';
+        final file = File(filePath);
+        await file.writeAsString(jsonEncode(mappedAssets));
+        pngAssetsList.assignAll(mappedAssets);
+        isCacheLoaded.value = true;
+        Get.snackbar("Data is updated!".tr, "Have a great time!".tr);
+      }
     } catch (e) {
       errorMessage.value = "Error fetching PNG assets: $e";
-      _errorController.logError("Error fetching PNG assets: $e");
-      print("Error fetching PNG assets: $e");
     } finally {
       isLoading.value = false;
     }
   }
 
-
-  Future<void> retryFetch() async {
-    await fetchAndCachePngAssets();
-  }
-
-
   FontWeight getFontWeight(String fontWeightStr) {
     switch (fontWeightStr) {
-      case '100': return FontWeight.w100;
-      case '200': return FontWeight.w200;
-      case '300': return FontWeight.w300;
-      case '400': return FontWeight.w400;
-      case '500': return FontWeight.w500;
-      case '600': return FontWeight.w600;
-      case '700': return FontWeight.w700;
-      case '800': return FontWeight.w800;
-      case '900': return FontWeight.w900;
-      default: return FontWeight.normal;
+      case '100':
+        return FontWeight.w100;
+      case '200':
+        return FontWeight.w200;
+      case '300':
+        return FontWeight.w300;
+      case '400':
+        return FontWeight.w400;
+      case '500':
+        return FontWeight.w500;
+      case '600':
+        return FontWeight.w600;
+      case '700':
+        return FontWeight.w700;
+      case '800':
+        return FontWeight.w800;
+      case '900':
+        return FontWeight.w900;
+      default:
+        return FontWeight.normal;
     }
   }
 }
